@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Table,
   TableBody,
@@ -6,66 +9,76 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const paymentHistory = [
-  {
-    invoice: "INV001",
-    date: "2023-10-01",
-    course: "Advanced Genetics",
-    amount: "$500.00",
-    status: "Paid",
-  },
-  {
-    invoice: "INV002",
-    date: "2023-10-01",
-    course: "Organic Chemistry II",
-    amount: "$550.00",
-    status: "Paid",
-  },
-  {
-    invoice: "INV003",
-    date: "2024-02-15",
-    course: "Quantum Physics",
-    amount: "$600.00",
-    status: "Paid",
-  },
-  {
-    invoice: "INV004",
-    date: "2024-02-15",
-    course: "Cellular Biology",
-    amount: "$520.00",
-    status: "Paid",
-  },
-];
+interface Payment {
+  id: string;
+  invoice: string;
+  date: string;
+  course: string;
+  amount: string;
+  status: "Paid" | "Pending" | "Failed";
+}
+
+function BillingSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-4 w-3/4 mt-2" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+             <div key={i} className="flex justify-between">
+                <Skeleton className="h-5 w-1/4" />
+                <Skeleton className="h-5 w-1/4" />
+                <Skeleton className="h-5 w-1/4" />
+             </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function BillingPage() {
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    setLoading(true);
+    const q = query(collection(db, 'payments'), where('studentId', '==', user.uid));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const paymentsData: Payment[] = [];
+      querySnapshot.forEach((doc) => {
+        paymentsData.push({ id: doc.id, ...(doc.data() as Omit<Payment, 'id'>) });
+      });
+      setPaymentHistory(paymentsData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   return (
     <>
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Billing & Payments</h1>
       </div>
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscription</CardTitle>
-            <CardDescription>
-              Manage your subscription and payment methods.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="font-medium">Current Plan: Pro (Annual)</p>
-              <p className="text-muted-foreground">Your plan renews on October 1, 2024.</p>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t pt-6">
-            <Button>Manage Subscription</Button>
-          </CardFooter>
-        </Card>
-
+      {loading ? (
+        <BillingSkeleton />
+      ) : (
         <Card>
           <CardHeader>
             <CardTitle>Payment History</CardTitle>
@@ -85,14 +98,23 @@ export default function BillingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {paymentHistory.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={5} className="text-center">No payment history found.</TableCell>
+                    </TableRow>
+                )}
                 {paymentHistory.map((payment) => (
-                  <TableRow key={payment.invoice}>
+                  <TableRow key={payment.id}>
                     <TableCell className="font-medium">{payment.invoice}</TableCell>
                     <TableCell>{payment.course}</TableCell>
                     <TableCell>{payment.date}</TableCell>
                     <TableCell>{payment.amount}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">{payment.status}</Badge>
+                      <Badge 
+                        variant={payment.status === 'Paid' ? 'secondary' : 'destructive'} 
+                        className={payment.status === 'Paid' ? 'bg-green-100 text-green-800' : ''}>
+                          {payment.status}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -100,7 +122,7 @@ export default function BillingPage() {
             </Table>
           </CardContent>
         </Card>
-      </div>
+      )}
     </>
   );
 }
