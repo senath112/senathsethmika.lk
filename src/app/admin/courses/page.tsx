@@ -30,13 +30,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { addCourse, updateCourseVideos } from './actions';
+import { addCourse, updateCourseVideos, addCourseDocument } from './actions';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CourseVideo {
     url: string;
@@ -53,9 +54,17 @@ interface Course {
   youtubeVideos?: CourseVideo[];
 }
 
+interface DocumentUpload {
+  name: string;
+  type: string;
+  fileUrl: string;
+}
+
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [uploadingToCourse, setUploadingToCourse] = useState<Course | null>(null);
+  const [document, setDocument] = useState<DocumentUpload>({ name: '', type: 'Notes', fileUrl: '' });
   const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   
@@ -129,6 +138,30 @@ export default function AdminCoursesPage() {
        setEditingCourse(null);
      }
   };
+
+  const handleAddDocument = async () => {
+    if (!uploadingToCourse || !document.name || !document.fileUrl) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all document fields.' });
+      return;
+    }
+
+    const result = await addCourseDocument(uploadingToCourse.id, uploadingToCourse.title, document);
+    if (result?.errors) {
+      const errorMessages = Object.values(result.errors).flat().join(', ');
+       toast({
+         variant: 'destructive',
+         title: 'Error uploading document',
+         description: errorMessages || 'An unknown error occurred.',
+       });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Document uploaded successfully.',
+      });
+      setUploadingToCourse(null);
+      setDocument({ name: '', type: 'Notes', fileUrl: '' });
+    }
+  }
 
   const handleVideoChange = (index: number, field: keyof CourseVideo, value: string, isNew: boolean) => {
     const list = isNew ? newCourseVideos : videos;
@@ -266,8 +299,9 @@ export default function AdminCoursesPage() {
                         />
                       </TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setEditingCourse(course)}>Edit Videos</Button>
+                        <Button variant="outline" size="sm" onClick={() => setUploadingToCourse(course)}>Upload Doc</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -277,6 +311,8 @@ export default function AdminCoursesPage() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Videos Dialog */}
       <Dialog open={!!editingCourse} onOpenChange={(isOpen) => !isOpen && setEditingCourse(null)}>
         <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -319,6 +355,48 @@ export default function AdminCoursesPage() {
                     <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button onClick={handleUpdateVideos}>Save Changes</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Document Dialog */}
+       <Dialog open={!!uploadingToCourse} onOpenChange={(isOpen) => !isOpen && setUploadingToCourse(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Upload Document for {uploadingToCourse?.title}</DialogTitle>
+                <DialogDescription>
+                    Add a new document like a syllabus or lecture notes to this course.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="doc-name">Document Name</Label>
+                <Input id="doc-name" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="doc-type">Document Type</Label>
+                <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
+                  <SelectTrigger id="doc-type">
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Notes">Notes</SelectItem>
+                    <SelectItem value="Syllabus">Syllabus</SelectItem>
+                    <SelectItem value="Tutorial">Tutorial</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="doc-url">File URL</Label>
+                <Input id="doc-url" value={document.fileUrl} onChange={(e) => setDocument(d => ({ ...d, fileUrl: e.target.value }))} placeholder="https://example.com/document.pdf" />
+              </div>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleAddDocument}>Upload Document</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

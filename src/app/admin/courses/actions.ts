@@ -4,6 +4,7 @@
 import { db } from '@/lib/firebase';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
+import { format } from 'date-fns';
 
 const videoObjectSchema = z.object({
   url: z.string().url({ message: 'Please enter a valid YouTube URL.' }),
@@ -20,6 +21,12 @@ const courseSchema = z.object({
 
 const videoSchema = z.object({
   youtubeVideos: z.array(videoObjectSchema).optional(),
+});
+
+const documentSchema = z.object({
+    name: z.string().min(3, { message: 'Document name must be at least 3 characters.' }),
+    type: z.string(),
+    fileUrl: z.string().url({ message: 'Please enter a valid file URL.' }),
 });
 
 export async function addCourse(prevState: any, formData: FormData) {
@@ -47,7 +54,7 @@ export async function addCourse(prevState: any, formData: FormData) {
   }
 
   try {
-    const randomImageId = 1;
+    const randomImageId = Math.floor(Math.random() * 1000);
     await addDoc(collection(db, "courses"), {
       title: validatedFields.data.title,
       description: validatedFields.data.description,
@@ -87,4 +94,29 @@ export async function updateCourseVideos(courseId: string, videos: { url: string
         errors: { firestore: ['Failed to update course videos.'] }
     }
   }
+}
+
+export async function addCourseDocument(courseId: string, courseTitle: string, document: { name: string; type: string; fileUrl: string; }) {
+    const validatedFields = documentSchema.safeParse(document);
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+        };
+    }
+
+    try {
+        await addDoc(collection(db, "documents"), {
+            ...validatedFields.data,
+            courseId,
+            courseTitle,
+            date: format(new Date(), 'yyyy-MM-dd'),
+        });
+        return { message: 'Document added successfully.' };
+    } catch (error) {
+        console.error("Error adding document: ", error);
+        return {
+            errors: { firestore: ['Failed to add document to database.'] }
+        }
+    }
 }
