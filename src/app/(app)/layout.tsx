@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -13,12 +14,14 @@ import {
   LayoutDashboard,
   Menu,
   PlayCircle,
+  Users,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/students', label: 'Students', icon: Users },
   { href: '/lectures', label: 'Lectures', icon: PlayCircle },
   { href: '/courses', label: 'Courses', icon: GraduationCap },
   { href: '/documents', label: 'Documents', icon: FileText },
