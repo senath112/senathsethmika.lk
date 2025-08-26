@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { LectureSummaryForm } from "./lecture-summary-form";
@@ -19,7 +20,7 @@ export default function LecturesPage() {
               <AspectRatio ratio={16 / 9}>
                 <iframe
                   className="rounded-lg w-full h-full"
-                  src="https://www.youtube.com/embed/8vyW4h6W22s"
+                  src="https://www.youtube.com/embed/8vyW4h6W22s?controls=0"
                   title="YouTube video player"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
