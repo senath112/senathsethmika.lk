@@ -34,14 +34,14 @@ function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-2 md:flex-row md:items-center">
+    <nav className="flex flex-col items-start gap-2 md:flex-row md:items-center">
        <TooltipProvider delayDuration={0}>
         {NAV_ITEMS.map((item) => (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
                <Button
                 variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className="justify-start md:justify-center md:h-12 md:w-12 rounded-full"
+                className="w-full justify-start md:justify-center md:h-12 md:w-12 rounded-full"
                 asChild
               >
                 <Link href={item.href}>
@@ -98,7 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Mobile Header and Desktop Dock Wrapper */}
+      {/* Mobile Header */}
        <header className="flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40 md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -108,31 +108,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
+              <div className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo />
-                </Link>
-                <SidebarNav />
-              </nav>
+              </div>
+              <SidebarNav />
             </SheetContent>
           </Sheet>
-           <div className="w-full flex-1 md:hidden">
-            <Logo />
+           <div className="w-full flex-1 md:hidden text-center">
+            <Logo className="inline-flex" />
           </div>
           <UserNav />
         </header>
+        
+       {/* Desktop Header */}
+       <header className="hidden md:flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
+        <Logo />
+        <div className="flex-1" />
+        <UserNav />
+      </header>
 
       {/* Desktop Dock */}
       <div className="hidden md:block fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
         <div className="bg-card/60 backdrop-blur-lg border rounded-full p-2 shadow-lg">
             <SidebarNav />
         </div>
-      </div>
-      
-       <div className="hidden md:flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
-        <Logo />
-        <div className="flex-1" />
-        <UserNav />
       </div>
 
       <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
