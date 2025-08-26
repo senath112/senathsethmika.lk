@@ -34,7 +34,7 @@ function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col items-start gap-2 md:flex-row md:items-center">
+    <nav className="flex flex-col items-start gap-2">
        <TooltipProvider delayDuration={0}>
         {NAV_ITEMS.map((item) => (
           <Tooltip key={item.href}>
@@ -50,7 +50,7 @@ function SidebarNav() {
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="top" className="md:block hidden">
+             <TooltipContent side="right" className="md:block hidden">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -128,13 +128,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Desktop Dock */}
-      <div className="hidden md:block fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+      <div className="hidden md:block fixed top-1/2 -translate-y-1/2 left-4 z-50">
         <div className="bg-card/60 backdrop-blur-lg border rounded-full p-2 shadow-lg">
             <SidebarNav />
         </div>
       </div>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto pb-24 md:pb-28">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24">
         {children}
       </main>
 
