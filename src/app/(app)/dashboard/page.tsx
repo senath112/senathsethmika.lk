@@ -16,10 +16,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as htmlToImage from 'html-to-image';
+import { format } from "date-fns";
 
-function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl }: { user: any, studentName: string, studentOlYear: string, studentId: string, qrCodeUrl: string}) {
+function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl, generatedAt }: { user: any, studentName: string, studentOlYear: string, studentId: string, qrCodeUrl: string, generatedAt: string | null}) {
   return (
-    <div className="bg-white p-6 rounded-lg max-w-xs mx-auto">
+    <div className="bg-white p-6 rounded-lg max-w-xs mx-auto font-sans">
         <div className="text-center mb-4">
             <h2 className="text-xl font-bold text-gray-800">{studentName}</h2>
             <p className="text-gray-600 font-mono">{studentOlYear}{studentId}</p>
@@ -34,6 +35,10 @@ function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl 
                 data-ai-hint="qr code"
               />
         </div>
+         <div className="text-center mt-4 pt-2 border-t border-gray-200">
+            <p className="text-sm font-semibold text-gray-700">SenathSethmika.lk</p>
+            {generatedAt && <p className="text-xs text-gray-500 mt-1">{generatedAt}</p>}
+        </div>
     </div>
   )
 }
@@ -45,6 +50,8 @@ function StudentIdCard() {
   const [studentMajor, setStudentMajor] = useState("");
   const [studentOlYear, setStudentOlYear] = useState("");
   const [loading, setLoading] = useState(true);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+
   const idCardRef = useRef<HTMLDivElement>(null);
   const minimalIdCardRef = useRef<HTMLDivElement>(null);
   
@@ -100,22 +107,32 @@ function StudentIdCard() {
     if (minimalIdCardRef.current === null) {
       return;
     }
+    
+    // Set the generation time just before creating the image
+    setGeneratedAt(format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 
-    htmlToImage.toPng(minimalIdCardRef.current, { cacheBust: true, pixelRatio: 2 })
-      .then((dataUrl) => {
-        const link = document.createElement('a');
-        link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((err) => {
-        console.log(err);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to download ID card image.",
-        })
-      });
+    // We need a short delay to allow React to re-render with the new `generatedAt` state
+    setTimeout(() => {
+        htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
+          .then((dataUrl) => {
+            const link = document.createElement('a');
+            link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
+            link.href = dataUrl;
+            link.click();
+          })
+          .catch((err) => {
+            console.log(err);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to download ID card image.",
+            })
+          })
+          .finally(() => {
+            // Reset generatedAt after download
+            setGeneratedAt(null);
+          });
+    }, 100);
   };
 
 
@@ -146,6 +163,7 @@ function StudentIdCard() {
               studentOlYear={studentOlYear}
               studentId={studentId}
               qrCodeUrl={qrCodeUrl}
+              generatedAt={generatedAt}
             />
           </div>
       </div>
