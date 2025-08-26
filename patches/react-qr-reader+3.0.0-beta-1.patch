@@ -1,0 +1,35 @@
+diff --git a/node_modules/react-qr-reader/dist/index.d.ts b/node_modules/react-qr-reader/dist/index.d.ts
+index e204557..a84f58f 100644
+--- a/node_modules/react-qr-reader/dist/index.d.ts
++++ b/node_modules/react-qr-reader/dist/index.d.ts
+@@ -1,4 +1,4 @@
+-import React from 'react';
++import React, { CSSProperties } from 'react';
+ import { IResult } from '@zxing/library';
+ export declare type TContraints = Required<Pick<MediaStreamConstraints, 'video'>>['video'];
+ export interface IProps {
+diff --git a/node_modules/react-qr-reader/dist/index.js b/node_modules/react-qr-reader/dist/index.js
+index 7247a3c..0181b53 100644
+--- a/node_modules/react-qr-reader/dist/index.js
++++ b/node_modules/react-qr-reader/dist/index.js
+@@ -10,7 +10,7 @@
+     'There is no video stream to scan from.';
+ const defaultProps = {
+     className: '',
+-    constraints: {
++    constraints: null,
+     videoContainerStyle: undefined,
+     videoStyle: undefined,
+     onResult: () => {
+diff --git a/node_modules/react-qr-reader/package.json b/node_modules/react-qr-reader/package.json
+index 27c2647..278b1d9 100644
+--- a/node_modules/react-qr-reader/package.json
++++ b/node_modules/react-qr-reader/package.json
+@@ -20,6 +20,6 @@
+     "react-dom": ">=16.8.0"
+   },
+   "peerDependencies": {
+-    "react": "^16.8.0 || ^17.0.0"
++    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+   }
+ }

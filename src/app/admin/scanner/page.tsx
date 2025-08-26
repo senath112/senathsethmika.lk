@@ -21,7 +21,6 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { requestEnrollment } from '@/app/(app)/courses/actions';
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { CameraOff } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -47,7 +46,13 @@ export default function ScannerPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  
+  useEffect(() => {
+    // Temporarily disabled camera check until a compatible QR library is added
+    // navigator.mediaDevices.getUserMedia({ video: true })
+    //   .then(() => setHasCameraPermission(true))
+    //   .catch(() => setHasCameraPermission(false));
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'courses'));
@@ -59,51 +64,15 @@ export default function ScannerPage() {
       setCourses(coursesData);
     });
 
-    const qrCodeScanner = new Html5Qrcode('qr-reader');
-    scannerRef.current = qrCodeScanner;
-
-    const startScanner = async () => {
-        try {
-            await Html5Qrcode.getCameras();
-            setHasCameraPermission(true);
-            if (isScanning && qrCodeScanner.getState() !== Html5QrcodeScannerState.SCANNING) {
-                qrCodeScanner.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    handleScanSuccess,
-                    handleScanFailure
-                ).catch(err => {
-                    console.error("Scanner start error:", err);
-                    if (err.name === 'NotAllowedError') {
-                        setHasCameraPermission(false);
-                    }
-                });
-            }
-        } catch(err) {
-            console.error("Camera error:", err);
-            setHasCameraPermission(false);
-        }
-    }
-    
-    startScanner();
-
-    return () => {
-        unsubscribe();
-        if (scannerRef.current && scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch(err => console.error("Error stopping scanner", err));
-        }
-    };
-  }, [isScanning]);
+    return () => unsubscribe();
+  }, []);
 
 
-  const handleScanSuccess = async (decodedText: string, decodedResult: any) => {
-      if (isScanning) {
+  const handleScanSuccess = async (result: any) => {
+      if (result && isScanning) {
         setIsScanning(false);
         try {
-            if (scannerRef.current && scannerRef.current.isScanning) {
-                await scannerRef.current.stop();
-            }
-
+            const decodedText = result?.getText();
             const studentRef = doc(db, 'students', decodedText);
             const studentSnap = await getDoc(studentRef);
 
@@ -127,11 +96,6 @@ export default function ScannerPage() {
         }
       }
   };
-
-  const handleScanFailure = (error: any) => {
-    // console.log(`QR error = ${error}`);
-  }
-
 
   const handleEnroll = async () => {
     if (!scannedStudent || !selectedCourse) {
@@ -170,16 +134,13 @@ export default function ScannerPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
-            <div id="qr-reader" className="w-full h-full"></div>
-             {hasCameraPermission === false && (
-                <Alert variant="destructive" className="w-auto absolute">
-                    <CameraOff className="h-4 w-4" />
-                    <AlertTitle>Camera Access Denied</AlertTitle>
-                    <AlertDescription>
-                        Please enable camera permissions in your browser to use the scanner.
-                    </AlertDescription>
-                </Alert>
-             )}
+            <Alert variant="default" className="w-auto absolute">
+                <CameraOff className="h-4 w-4" />
+                <AlertTitle>Scanner Temporarily Unavailable</AlertTitle>
+                <AlertDescription>
+                    The QR code scanner is currently being updated.
+                </AlertDescription>
+            </Alert>
             {!isScanning && scannedStudent && (
               <div className="absolute inset-0 bg-background flex flex-col items-center justify-center text-center p-4">
                  <Avatar className="h-24 w-24 mb-4">
