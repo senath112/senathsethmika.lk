@@ -5,7 +5,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Atom className="h-6 w-6 text-primary" />
-      <h1 className="text-xl font-bold text-foreground">Synapse Learning</h1>
+      <h1 className="text-xl font-bold text-foreground">Senath Sethmika.lk</h1>
     </div>
   );
 }

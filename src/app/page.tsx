@@ -71,7 +71,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Atom className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">Synapse Learning</CardTitle>
+          <CardTitle className="text-3xl font-bold">Senath Sethmika.lk</CardTitle>
           <CardDescription>Welcome! Sign in to access your educational hub.</CardDescription>
         </CardHeader>
         <CardContent>

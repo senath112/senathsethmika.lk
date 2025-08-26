@@ -107,7 +107,7 @@ export default function SignupPage() {
             <Atom className="h-8 w-8" />
           </div>
           <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Join Synapse Learning today!</CardDescription>
+          <CardDescription>Join Senath Sethmika.lk today!</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleEmailSignUp} className="space-y-4">

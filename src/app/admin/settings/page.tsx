@@ -20,7 +20,7 @@ export default function AdminSettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="platform-name">Platform Name</Label>
-                <Input id="platform-name" defaultValue="Synapse Learning" />
+                <Input id="platform-name" defaultValue="Senath Sethmika.lk" />
             </div>
              <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">

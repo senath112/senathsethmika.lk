@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'Synapse Learning',
+  title: 'Senath Sethmika.lk',
   description:
     'A modern educational hub for science class students and administrators.',
 };
