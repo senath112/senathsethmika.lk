@@ -80,6 +80,41 @@ function StudentIdCard() {
     fetchStudentData();
   }, [user]);
 
+  useEffect(() => {
+    if (generatedAt === null) return;
+    
+    const downloadImage = () => {
+      if (minimalIdCardRef.current === null) {
+          return;
+      }
+      htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
+        .then((dataUrl) => {
+          const link = document.createElement('a');
+          link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
+          link.href = dataUrl;
+          link.click();
+        })
+        .catch((err) => {
+          console.log(err);
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to download ID card image.",
+          })
+        })
+        .finally(() => {
+          // Reset generatedAt after download to allow re-triggering
+          setGeneratedAt(null);
+        });
+    }
+
+    // This timeout ensures the state has updated and the component has re-rendered
+    const timer = setTimeout(downloadImage, 100);
+
+    return () => clearTimeout(timer);
+
+  }, [generatedAt, toast, user]);
+
 
   const handleSave = async () => {
     if (!user) return;
@@ -102,39 +137,11 @@ function StudentIdCard() {
       });
     }
   };
-
-  const handleDownloadImage = () => {
-    if (minimalIdCardRef.current === null) {
-      return;
-    }
-    
-    // Set the generation time just before creating the image
+  
+  const handleDownloadClick = () => {
+    // Set the generation time to trigger the useEffect for download
     setGeneratedAt(format(new Date(), "yyyy-MM-dd HH:mm:ss"));
-
-    // We need a short delay to allow React to re-render with the new `generatedAt` state
-    setTimeout(() => {
-        htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
-          .then((dataUrl) => {
-            const link = document.createElement('a');
-            link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
-            link.href = dataUrl;
-            link.click();
-          })
-          .catch((err) => {
-            console.log(err);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to download ID card image.",
-            })
-          })
-          .finally(() => {
-            // Reset generatedAt after download
-            setGeneratedAt(null);
-          });
-    }, 100);
-  };
-
+  }
 
   if (loading) {
     return (
@@ -214,7 +221,7 @@ function StudentIdCard() {
         </CardContent>
        </div>
        <div className="p-4 sm:p-6 border-t flex items-center justify-end gap-2">
-           <Button size="icon" variant="outline" onClick={handleDownloadImage}>
+           <Button size="icon" variant="outline" onClick={handleDownloadClick}>
               <Download />
             </Button>
             {isEditing ? (
