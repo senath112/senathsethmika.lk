@@ -17,11 +17,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogClose
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { addCourse } from './actions';
+import { addCourse, updateCourseVideos } from './actions';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import React, { useEffect, useState } from 'react';
@@ -39,6 +48,8 @@ interface Course {
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [videoUrls, setVideoUrls] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,6 +63,14 @@ export default function AdminCoursesPage() {
     });
     return () => unsubscribe();
   }, []);
+  
+  useEffect(() => {
+    if (editingCourse) {
+      setVideoUrls((editingCourse.youtubeUrls || []).join('\n'));
+    } else {
+      setVideoUrls('');
+    }
+  }, [editingCourse]);
 
   const handleAddCourse = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,6 +91,27 @@ export default function AdminCoursesPage() {
       });
       (event.target as HTMLFormElement).reset();
     }
+  };
+
+  const handleUpdateVideos = async () => {
+    if (!editingCourse) return;
+
+    const result = await updateCourseVideos(editingCourse.id, videoUrls);
+
+     if (result?.errors) {
+       const errorMessages = Object.values(result.errors).flat().join(', ');
+       toast({
+         variant: 'destructive',
+         title: 'Error updating videos',
+         description: errorMessages || 'An unknown error occurred.',
+       });
+     } else {
+       toast({
+         title: 'Success',
+         description: 'YouTube videos updated successfully.',
+       });
+       setEditingCourse(null);
+     }
   };
 
   return (
@@ -134,7 +174,7 @@ export default function AdminCoursesPage() {
                   <TableRow>
                     <TableHead>Image</TableHead>
                     <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -151,7 +191,9 @@ export default function AdminCoursesPage() {
                         />
                       </TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
-                      <TableCell>{course.description}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => setEditingCourse(course)}>Edit Videos</Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -160,6 +202,32 @@ export default function AdminCoursesPage() {
           </Card>
         </div>
       </div>
+      <Dialog open={!!editingCourse} onOpenChange={(isOpen) => !isOpen && setEditingCourse(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit YouTube Videos for {editingCourse?.title}</DialogTitle>
+                <DialogDescription>
+                    Add or remove YouTube video URLs for this course. Enter one URL per line.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+                <Label htmlFor="edit-youtubeUrls" className="sr-only">YouTube Video URLs</Label>
+                <Textarea
+                    id="edit-youtubeUrls"
+                    value={videoUrls}
+                    onChange={(e) => setVideoUrls(e.target.value)}
+                    placeholder="Enter one YouTube URL per line"
+                    rows={8}
+                />
+            </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button onClick={handleUpdateVideos}>Save Changes</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
