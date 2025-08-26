@@ -47,7 +47,7 @@ export async function addCourse(prevState: any, formData: FormData) {
   }
 
   try {
-    const randomImageId = Math.floor(Math.random() * 1000);
+    const randomImageId = 1;
     await addDoc(collection(db, "courses"), {
       title: validatedFields.data.title,
       description: validatedFields.data.description,
