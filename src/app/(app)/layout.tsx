@@ -84,7 +84,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!loading && !user && !pathname.startsWith('/admin')) {
-      router.push('/');
+      router.push('/login');
     }
   }, [user, loading, router, pathname]);
 

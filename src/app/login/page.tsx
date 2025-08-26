@@ -8,11 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Atom } from 'lucide-react';
-import React, { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import React from 'react';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,78 +24,45 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const provinces = [
-  { name: 'Western Province', districts: ['Colombo', 'Gampaha', 'Kalutara'] },
-  { name: 'Central Province', districts: ['Kandy', 'Matale', 'Nuwara Eliya'] },
-  { name: 'Southern Province', districts: ['Galle', 'Matara', 'Hambantota'] },
-  { name: 'Northern Province', districts: ['Jaffna', 'Kilinochchi', 'Mannar', 'Mullaitivu', 'Vavuniya'] },
-  { name: 'Eastern Province', districts: ['Trincomalee', 'Batticaloa', 'Ampara'] },
-  { name: 'North Western Province', districts: ['Kurunegala', 'Puttalam'] },
-  { name: 'North Central Province', districts: ['Anuradhapura', 'Polonnaruwa'] },
-  { name: 'Uva Province', districts: ['Badulla', 'Monaragala'] },
-  { name: 'Sabaragamuwa Province', districts: ['Kegalle', 'Ratnapura'] },
-];
-
-export default function SignupPage() {
-  const [name, setName] = React.useState('');
+export default function LoginPage() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [olYear, setOlYear] = React.useState('');
-  const [selectedProvince, setSelectedProvince] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
   const router = useRouter();
   const { toast } = useToast();
-  
-  const handleProvinceChange = (value: string) => {
-    setSelectedProvince(value);
-    setSelectedDistrict('');
-  };
 
-  const availableDistricts = provinces.find(p => p.name === selectedProvince)?.districts || [];
-
-  const handleEmailSignUp = async (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (email === 'Admin@sys.org' && password === 'MyHearWillGoOn') {
+      router.push('/admin/dashboard');
+      return;
+    }
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await setDoc(doc(db, "students", user.uid), {
-        name: name,
-        email: user.email,
-        olYear: olYear,
-        province: selectedProvince,
-        district: selectedDistrict
-      });
-
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-       toast({
+      toast({
         variant: "destructive",
-        title: "Sign-up Failed",
+        title: "Sign-in Failed",
         description: error.message,
       });
     }
   };
-
-  const handleGoogleSignUp = async () => {
+  
+  const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-       await setDoc(doc(db, "students", user.uid), {
-        name: user.displayName,
-        email: user.email,
-      }, { merge: true });
+      await signInWithPopup(auth, provider);
        router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Google Sign-up Failed",
+        title: "Google Sign-in Failed",
         description: error.message,
       });
     }
   };
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -108,21 +73,10 @@ export default function SignupPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Senath Sethmika.lk</CardTitle>
           <p className="text-xl font-medium text-primary">විද්‍යාවේ හදගැස්​ම</p>
-          <CardDescription className="pt-2">Create an account to get started!</CardDescription>
+          <CardDescription className="pt-2">Welcome! Sign in to access your educational hub.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleEmailSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Your full name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
+          <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -144,49 +98,8 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="olYear">O/L Year</Label>
-              <Input
-                id="olYear"
-                type="text"
-                placeholder="e.g., 2025"
-                required
-                value={olYear}
-                onChange={(e) => setOlYear(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="province">Province</Label>
-              <Select onValueChange={handleProvinceChange} value={selectedProvince}>
-                <SelectTrigger id="province">
-                  <SelectValue placeholder="Select a province" />
-                </SelectTrigger>
-                <SelectContent>
-                  {provinces.map((province) => (
-                    <SelectItem key={province.name} value={province.name}>
-                      {province.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="district">District</Label>
-              <Select onValueChange={setSelectedDistrict} value={selectedDistrict} disabled={!selectedProvince}>
-                <SelectTrigger id="district">
-                  <SelectValue placeholder="Select a district" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDistricts.map((district) => (
-                    <SelectItem key={district} value={district}>
-                      {district}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <Button type="submit" className="w-full h-12 text-base">
-              Sign Up
+              Sign In
             </Button>
           </form>
 
@@ -196,15 +109,15 @@ export default function SignupPage() {
             <Separator className="flex-1" />
           </div>
           
-          <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignUp}>
+          <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn}>
             <GoogleIcon className="mr-2 h-5 w-5" />
-            Sign up with Google
+            Sign in with Google
           </Button>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="underline underline-offset-4 hover:text-primary">
-              Sign in
+            Don't have an account?{' '}
+            <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
+              Sign up
             </Link>
           </p>
 
