@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Atom } from 'lucide-react';
 import React from 'react';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -23,13 +27,35 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginPage() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically handle the Firebase email/password sign-in
-    console.log('Signing in with:', email, password);
-    // For now, we'll just navigate to the dashboard on any submission
-    window.location.href = '/dashboard';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Sign-in Failed",
+        description: error.message,
+      });
+    }
+  };
+  
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+       router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Google Sign-in Failed",
+        description: error.message,
+      });
+    }
   };
 
   return (
@@ -76,11 +102,9 @@ export default function LoginPage() {
             <Separator className="flex-1" />
           </div>
           
-          <Button variant="outline" className="w-full h-12 text-base" asChild>
-            <Link href="/dashboard">
-              <GoogleIcon className="mr-2 h-5 w-5" />
-              Sign in with Google
-            </Link>
+          <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn}>
+            <GoogleIcon className="mr-2 h-5 w-5" />
+            Sign in with Google
           </Button>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">

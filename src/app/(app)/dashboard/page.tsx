@@ -8,21 +8,51 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Edit, PlayCircle, Save, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { saveStudentDetails } from "./actions";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function StudentIdCard() {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [studentName, setStudentName] = useState("Student Name");
-  const [studentMajor, setStudentMajor] = useState("Biology Major");
-  const studentId = "SYN-123456";
+  const [studentName, setStudentName] = useState("");
+  const [studentMajor, setStudentMajor] = useState("");
+  const [loading, setLoading] = useState(true);
+  
   const { toast } = useToast();
 
+  useEffect(() => {
+    async function fetchStudentData() {
+      if (user) {
+        setLoading(true);
+        const docRef = doc(db, "students", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setStudentName(data.name || user.displayName || "Student Name");
+          setStudentMajor(data.major || "Not specified");
+        } else {
+           setStudentName(user.displayName || "Student Name");
+           setStudentMajor("Not specified");
+        }
+        setLoading(false);
+      }
+    }
+
+    fetchStudentData();
+  }, [user]);
+
+
   const handleSave = async () => {
+    if (!user) return;
     try {
       await saveStudentDetails({
-        id: studentId,
+        id: user.uid,
         name: studentName,
         major: studentMajor,
       });
@@ -41,12 +71,26 @@ function StudentIdCard() {
   };
 
 
+  if (loading) {
+    return (
+      <Card className="overflow-hidden shadow-lg col-span-1 lg:col-span-2">
+        <div className="bg-primary/10 p-4 sm:p-6 flex items-center gap-4">
+          <Skeleton className="h-24 w-24 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-5 w-32" />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden shadow-lg col-span-1 lg:col-span-2">
        <div className="bg-primary/10 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
         <Avatar className="h-24 w-24 border-4 border-white shadow-md">
-          <AvatarImage src="https://picsum.photos/100" alt="Student Name" data-ai-hint="person" />
-          <AvatarFallback>SN</AvatarFallback>
+          <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="Student Name" data-ai-hint="person" />
+          <AvatarFallback>{studentName?.charAt(0) || 'S'}</AvatarFallback>
         </Avatar>
         <div className="text-center sm:text-left flex-grow">
           {isEditing ? (
@@ -83,13 +127,13 @@ function StudentIdCard() {
       <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
         <div>
           <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-          <p className="font-semibold">{studentId}</p>
+          <p className="font-semibold">{user?.uid.substring(0, 10) || 'N/A'}</p>
           <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
           <p className="font-semibold">12/2026</p>
         </div>
         <div className="flex justify-end">
           <Image
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${studentId}`}
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`}
             alt="QR Code"
             width={100}
             height={100}
