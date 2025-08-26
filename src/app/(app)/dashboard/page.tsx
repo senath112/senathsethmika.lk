@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Edit, PlayCircle, Save, Users, X } from "lucide-react";
+import { ArrowRight, BookOpen, Edit, PlayCircle, Save, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
@@ -181,12 +181,6 @@ export default function DashboardPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StudentIdCard />
-        <QuickAccessCard
-          icon={Users}
-          title="Students"
-          description="Manage student information"
-          href="/students"
-        />
         <QuickAccessCard
           icon={PlayCircle}
           title="Lectures"
