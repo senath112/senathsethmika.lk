@@ -33,9 +33,15 @@ import { useToast } from '@/hooks/use-toast';
 import { addCourse, updateCourseVideos } from './actions';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { Plus, Trash2 } from 'lucide-react';
+
+interface CourseVideo {
+    url: string;
+    description: string;
+}
 
 interface Course {
   id: string;
@@ -43,21 +49,29 @@ interface Course {
   description: string;
   image: string;
   aiHint: string;
-  youtubeUrls?: string[];
+  youtubeVideos?: CourseVideo[];
 }
 
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [videoUrls, setVideoUrls] = useState('');
+  const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '' }]);
+  const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '' }]);
+  
   const { toast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'courses'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const coursesData: Course[] = [];
       querySnapshot.forEach((doc) => {
-        coursesData.push({ id: doc.id, ...(doc.data() as Omit<Course, 'id'>) });
+        const data = doc.data();
+        coursesData.push({ 
+            id: doc.id, 
+            ...(data as Omit<Course, 'id'>),
+            youtubeVideos: data.youtubeVideos || []
+        });
       });
       setCourses(coursesData);
     });
@@ -66,9 +80,9 @@ export default function AdminCoursesPage() {
   
   useEffect(() => {
     if (editingCourse) {
-      setVideoUrls((editingCourse.youtubeUrls || []).join('\n'));
+      setVideos(editingCourse.youtubeVideos || [{ url: '', description: '' }]);
     } else {
-      setVideoUrls('');
+      setVideos([{ url: '', description: '' }]);
     }
   }, [editingCourse]);
 
@@ -89,14 +103,15 @@ export default function AdminCoursesPage() {
         title: 'Success',
         description: 'Course added successfully.',
       });
-      (event.target as HTMLFormElement).reset();
+      formRef.current?.reset();
+      setNewCourseVideos([{ url: '', description: '' }]);
     }
   };
 
   const handleUpdateVideos = async () => {
     if (!editingCourse) return;
 
-    const result = await updateCourseVideos(editingCourse.id, videoUrls);
+    const result = await updateCourseVideos(editingCourse.id, videos);
 
      if (result?.errors) {
        const errorMessages = Object.values(result.errors).flat().join(', ');
@@ -114,6 +129,29 @@ export default function AdminCoursesPage() {
      }
   };
 
+  const handleVideoChange = (index: number, field: keyof CourseVideo, value: string, isNew: boolean) => {
+    const list = isNew ? newCourseVideos : videos;
+    const setList = isNew ? setNewCourseVideos : setVideos;
+    const updatedVideos = [...list];
+    updatedVideos[index][field] = value;
+    setList(updatedVideos);
+  };
+
+  const addVideoInput = (isNew: boolean) => {
+    const setList = isNew ? setNewCourseVideos : setVideos;
+    setList(prev => [...prev, { url: '', description: '' }]);
+  };
+
+  const removeVideoInput = (index: number, isNew: boolean) => {
+    const list = isNew ? newCourseVideos : videos;
+    const setList = isNew ? setNewCourseVideos : setVideos;
+    if (list.length > 1) {
+      const updatedVideos = list.filter((_, i) => i !== index);
+      setList(updatedVideos);
+    }
+  };
+
+
   return (
     <>
       <div className="flex items-center">
@@ -126,7 +164,7 @@ export default function AdminCoursesPage() {
               <CardTitle>Add New Course</CardTitle>
               <CardDescription>Fill out the form to add a new course.</CardDescription>
             </CardHeader>
-            <form onSubmit={handleAddCourse}>
+            <form onSubmit={handleAddCourse} ref={formRef}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Course Title</Label>
@@ -147,13 +185,29 @@ export default function AdminCoursesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="youtubeUrls">YouTube Video URLs</Label>
-                  <Textarea
-                    id="youtubeUrls"
-                    name="youtubeUrls"
-                    placeholder="Enter one YouTube URL per line"
-                    rows={4}
-                  />
+                  <Label>YouTube Videos</Label>
+                  {newCourseVideos.map((video, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        name="youtubeUrl"
+                        value={video.url}
+                        onChange={(e) => handleVideoChange(index, 'url', e.target.value, true)}
+                        placeholder="YouTube URL"
+                      />
+                      <Input
+                        name="youtubeDescription"
+                        value={video.description}
+                        onChange={(e) => handleVideoChange(index, 'description', e.target.value, true)}
+                        placeholder="Description (optional)"
+                      />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, true)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Video
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>
@@ -203,22 +257,34 @@ export default function AdminCoursesPage() {
         </div>
       </div>
       <Dialog open={!!editingCourse} onOpenChange={(isOpen) => !isOpen && setEditingCourse(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Edit YouTube Videos for {editingCourse?.title}</DialogTitle>
                 <DialogDescription>
-                    Add or remove YouTube video URLs for this course. Enter one URL per line.
+                    Add, remove, or edit YouTube video links and their descriptions.
                 </DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
-                <Label htmlFor="edit-youtubeUrls" className="sr-only">YouTube Video URLs</Label>
-                <Textarea
-                    id="edit-youtubeUrls"
-                    value={videoUrls}
-                    onChange={(e) => setVideoUrls(e.target.value)}
-                    placeholder="Enter one YouTube URL per line"
-                    rows={8}
-                />
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                {videos.map((video, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={video.url}
+                      onChange={(e) => handleVideoChange(index, 'url', e.target.value, false)}
+                      placeholder="YouTube URL"
+                    />
+                    <Input
+                      value={video.description}
+                      onChange={(e) => handleVideoChange(index, 'description', e.target.value, false)}
+                      placeholder="Description (optional)"
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, false)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                 <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(false)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Video
+                 </Button>
             </div>
             <DialogFooter>
                 <DialogClose asChild>

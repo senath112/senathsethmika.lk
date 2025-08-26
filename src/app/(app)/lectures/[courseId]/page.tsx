@@ -14,11 +14,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Ban, Youtube } from 'lucide-react';
 
+interface CourseVideo {
+  url: string;
+  description: string;
+}
+
 interface Course {
   id: string;
   title: string;
   description: string;
-  youtubeUrls: string[];
+  youtubeVideos: CourseVideo[];
 }
 
 const VIDEO_VIEW_LIMIT = 3;
@@ -52,12 +57,19 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
 
       if (courseSnap.exists()) {
         const courseData = { id: courseSnap.id, ...courseSnap.data() } as Course;
+        // The field might still be youtubeUrls in old documents
+        if (!courseData.youtubeVideos && (courseData as any).youtubeUrls) {
+          courseData.youtubeVideos = ((courseData as any).youtubeUrls as string[]).map(url => ({ url, description: '' }));
+        } else if (!courseData.youtubeVideos) {
+          courseData.youtubeVideos = [];
+        }
+        
         setCourse(courseData);
         
         // Fetch view counts for all videos in parallel
         const counts: Record<string, number> = {};
-        for (const url of courseData.youtubeUrls) {
-          const videoId = getYouTubeVideoId(url);
+        for (const video of courseData.youtubeVideos) {
+          const videoId = getYouTubeVideoId(video.url);
           if (videoId) {
             counts[videoId] = await getVideoViewCount(user.uid, params.courseId, videoId);
           }
@@ -132,7 +144,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                         {selectedVideo ? (
                              <iframe
                                 className="rounded-lg w-full h-full"
-                                src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1`}
+                                src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1&controls=0`}
                                 title="YouTube video player"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
@@ -154,8 +166,8 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                     <CardDescription>Available Videos</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                    {course.youtubeUrls.length > 0 ? course.youtubeUrls.map((url, index) => {
-                        const videoId = getYouTubeVideoId(url);
+                    {course.youtubeVideos.length > 0 ? course.youtubeVideos.map((video, index) => {
+                        const videoId = getYouTubeVideoId(video.url);
                         if (!videoId) return null;
                         const viewCount = videoViewCounts[videoId] || 0;
                         const limitReached = viewCount >= VIDEO_VIEW_LIMIT;
@@ -165,14 +177,14 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                                 <Button 
                                     variant="outline" 
                                     className="w-full justify-start text-left h-auto"
-                                    onClick={() => handleWatchVideo(url)}
+                                    onClick={() => handleWatchVideo(video.url)}
                                     disabled={limitReached}
                                 >
                                     <Youtube className="mr-2 text-red-500" />
                                     <div className="flex-1">
                                         <p>Lecture Part {index + 1}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Views: {viewCount} / {VIDEO_VIEW_LIMIT}
+                                            {video.description || `Views: ${viewCount} / ${VIDEO_VIEW_LIMIT}`}
                                         </p>
                                     </div>
                                     {limitReached && <Ban className="h-4 w-4 text-destructive" />}

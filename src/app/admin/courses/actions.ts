@@ -5,24 +5,34 @@ import { db } from '@/lib/firebase';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 
+const videoObjectSchema = z.object({
+  url: z.string().url({ message: 'Please enter a valid YouTube URL.' }),
+  description: z.string().optional(),
+});
+
 const courseSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
-  youtubeUrls: z.array(z.string().url({ message: 'Please enter a valid YouTube URL.' })).optional(),
+  youtubeVideos: z.array(videoObjectSchema).optional(),
 });
 
 const videoSchema = z.object({
-  youtubeUrls: z.array(z.string().url({ message: 'Please enter a valid YouTube URL.' })).optional(),
+  youtubeVideos: z.array(videoObjectSchema).optional(),
 });
 
 export async function addCourse(prevState: any, formData: FormData) {
-  const youtubeUrlsRaw = formData.get('youtubeUrls') as string;
-  const youtubeUrls = youtubeUrlsRaw.split('\n').map(url => url.trim()).filter(url => url);
+  const videoUrls = formData.getAll('youtubeUrl');
+  const videoDescriptions = formData.getAll('youtubeDescription');
+
+  const youtubeVideos = videoUrls.map((url, index) => ({
+    url: String(url),
+    description: String(videoDescriptions[index]),
+  })).filter(video => video.url);
 
   const validatedFields = courseSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
-    youtubeUrls: youtubeUrls.length > 0 ? youtubeUrls : undefined,
+    youtubeVideos: youtubeVideos.length > 0 ? youtubeVideos : undefined,
   });
 
   if (!validatedFields.success) {
@@ -36,23 +46,23 @@ export async function addCourse(prevState: any, formData: FormData) {
     await addDoc(collection(db, "courses"), {
       title: validatedFields.data.title,
       description: validatedFields.data.description,
-      youtubeUrls: validatedFields.data.youtubeUrls || [],
+      youtubeVideos: validatedFields.data.youtubeVideos || [],
       image: `https://picsum.photos/600/400?random=${randomImageId}`,
       aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`
     });
     return { message: 'Course added successfully.' };
   } catch (error) {
     return {
-        errors: { firestore: 'Failed to add course to database.' }
+        errors: { firestore: ['Failed to add course to database.'] }
     }
   }
 }
 
-export async function updateCourseVideos(courseId: string, youtubeUrlsRaw: string) {
-  const youtubeUrls = youtubeUrlsRaw.split('\n').map(url => url.trim()).filter(url => url);
+export async function updateCourseVideos(courseId: string, videos: { url: string; description: string }[]) {
+  const youtubeVideos = videos.filter(video => video.url);
 
   const validatedFields = videoSchema.safeParse({
-    youtubeUrls: youtubeUrls.length > 0 ? youtubeUrls : undefined,
+    youtubeVideos: youtubeVideos.length > 0 ? youtubeVideos : undefined,
   });
 
   if (!validatedFields.success) {
@@ -64,12 +74,12 @@ export async function updateCourseVideos(courseId: string, youtubeUrlsRaw: strin
   try {
     const courseRef = doc(db, "courses", courseId);
     await updateDoc(courseRef, {
-      youtubeUrls: validatedFields.data.youtubeUrls || []
+      youtubeVideos: validatedFields.data.youtubeVideos || []
     });
     return { message: 'Course videos updated successfully.' };
   } catch (error) {
      return {
-        errors: { firestore: 'Failed to update course videos.' }
+        errors: { firestore: ['Failed to update course videos.'] }
     }
   }
 }
