@@ -72,7 +72,8 @@ export default function LoginPage() {
             <Atom className="h-8 w-8" />
           </div>
           <CardTitle className="text-3xl font-bold">Senath Sethmika.lk</CardTitle>
-          <CardDescription>Welcome! Sign in to access your educational hub.</CardDescription>
+          <p className="text-xl font-medium text-primary">විද්‍යාවේ හදගැස්​ම</p>
+          <CardDescription className="pt-2">Welcome! Sign in to access your educational hub.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleEmailSignIn} className="space-y-4">
@@ -136,3 +137,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
