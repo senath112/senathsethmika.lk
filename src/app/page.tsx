@@ -1,7 +1,14 @@
+
+"use client";
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Atom } from 'lucide-react';
+import React from 'react';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -14,6 +21,17 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function LoginPage() {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+
+  const handleEmailSignIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically handle the Firebase email/password sign-in
+    console.log('Signing in with:', email, password);
+    // For now, we'll just navigate to the dashboard on any submission
+    window.location.href = '/dashboard';
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
@@ -25,25 +43,56 @@ export default function LoginPage() {
           <CardDescription>Welcome! Sign in to access your educational hub.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full h-12 text-base" asChild>
-              <Link href="/dashboard">
-                <GoogleIcon className="mr-2 h-5 w-5" />
-                Sign in with Google
-              </Link>
+          <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full h-12 text-base">
+              Sign In
             </Button>
-            <p className="px-8 text-center text-sm text-muted-foreground">
-              By clicking continue, you agree to our{' '}
-              <Link href="#" className="underline underline-offset-4 hover:text-primary">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="#" className="underline underline-offset-4 hover:text-primary">
-                Privacy Policy
-              </Link>
-              .
-            </p>
+          </form>
+
+          <div className="my-6 flex items-center">
+            <Separator className="flex-1" />
+            <span className="mx-4 text-sm text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
           </div>
+          
+          <Button variant="outline" className="w-full h-12 text-base" asChild>
+            <Link href="/dashboard">
+              <GoogleIcon className="mr-2 h-5 w-5" />
+              Sign in with Google
+            </Link>
+          </Button>
+          <p className="mt-6 px-8 text-center text-sm text-muted-foreground">
+            By clicking continue, you agree to our{' '}
+            <Link href="#" className="underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="#" className="underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>
