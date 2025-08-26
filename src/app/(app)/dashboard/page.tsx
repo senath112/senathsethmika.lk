@@ -21,6 +21,7 @@ function StudentIdCard() {
   const [isEditing, setIsEditing] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [studentMajor, setStudentMajor] = useState("");
+  const [studentOlYear, setStudentOlYear] = useState("");
   const [loading, setLoading] = useState(true);
   
   const { toast } = useToast();
@@ -36,6 +37,7 @@ function StudentIdCard() {
           const data = docSnap.data();
           setStudentName(data.name || user.displayName || "Student Name");
           setStudentMajor(data.major || "Not specified");
+          setStudentOlYear(data.olYear || "");
         } else {
            setStudentName(user.displayName || "Student Name");
            setStudentMajor("Not specified");
@@ -127,7 +129,7 @@ function StudentIdCard() {
       <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
         <div>
           <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-          <p className="font-semibold">{user?.uid.substring(0, 10) || 'N/A'}</p>
+          <p className="font-semibold">{studentOlYear}{user?.uid.substring(0, 5).toUpperCase() || 'XXXXX'}</p>
           <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
           <p className="font-semibold">12/2026</p>
         </div>
