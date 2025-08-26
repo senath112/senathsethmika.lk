@@ -1,8 +1,27 @@
 
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, BookOpen, BarChart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { collection, getCountFromServer } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function AdminDashboardPage() {
+  const [studentCount, setStudentCount] = useState<number | string>("Loading...");
+  const [courseCount, setCourseCount] = useState<number | string>("Loading...");
+
+  useEffect(() => {
+    async function fetchData() {
+      const studentSnapshot = await getCountFromServer(collection(db, "students"));
+      setStudentCount(studentSnapshot.data().count);
+      
+      const courseSnapshot = await getCountFromServer(collection(db, "courses"));
+      setCourseCount(courseSnapshot.data().count);
+    }
+    fetchData();
+  }, []);
+
   return (
     <>
       <div className="flex items-center">
@@ -15,8 +34,8 @@ export default function AdminDashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
-                <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                <div className="text-2xl font-bold">{studentCount}</div>
+                <p className="text-xs text-muted-foreground">Registered on the platform</p>
             </CardContent>
         </Card>
          <Card>
@@ -25,8 +44,8 @@ export default function AdminDashboardPage() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">+2 since last semester</p>
+                <div className="text-2xl font-bold">{courseCount}</div>
+                <p className="text-xs text-muted-foreground">Available for enrollment</p>
             </CardContent>
         </Card>
          <Card>
@@ -36,7 +55,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">87.5%</div>
-                <p className="text-xs text-muted-foreground">Weekly average</p>
+                <p className="text-xs text-muted-foreground">Weekly average (demo data)</p>
             </CardContent>
         </Card>
       </div>
@@ -47,7 +66,7 @@ export default function AdminDashboardPage() {
                 <CardDescription>A log of recent platform events.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>No recent activity.</p>
+              <p>No recent activity to display.</p>
             </CardContent>
         </Card>
        </div>

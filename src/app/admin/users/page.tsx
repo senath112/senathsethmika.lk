@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Table,
   TableBody,
@@ -10,14 +12,44 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-const users = [
-  { id: "USR001", name: "John Doe", email: "john.doe@example.com", status: "Active" },
-  { id: "USR002", name: "Jane Smith", email: "jane.smith@example.com", status: "Active" },
-  { id: "USR003", name: "Peter Jones", email: "peter.jones@example.com", status: "Inactive" },
-]
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  olYear: string;
+  province: string;
+  district: string;
+}
 
 export default function AdminUsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const q = query(collection(db, 'students'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const usersData: User[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        usersData.push({
+          id: doc.id,
+          name: data.name || "N/A",
+          email: data.email || "N/A",
+          olYear: data.olYear || "N/A",
+          province: data.province || "N/A",
+          district: data.district || "N/A",
+          status: "Active", // Assuming all users are active for now
+        });
+      });
+      setUsers(usersData);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <>
       <div className="flex items-center">
@@ -34,9 +66,10 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>O/L Year</TableHead>
+                <TableHead>District</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -44,9 +77,10 @@ export default function AdminUsersPage() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.id}</TableCell>
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.olYear}</TableCell>
+                  <TableCell>{user.district}</TableCell>
                   <TableCell>
                      <Badge variant={user.status === 'Active' ? 'secondary' : 'outline'} className={user.status === 'Active' ? 'bg-green-100 text-green-800' : ''}>{user.status}</Badge>
                   </TableCell>
