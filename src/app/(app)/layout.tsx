@@ -20,6 +20,7 @@ import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,43 +34,38 @@ function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-2">
-      {NAV_ITEMS.map((item) => (
-        <Button
-          key={item.href}
-          variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-          className="justify-start"
-          asChild
-        >
-          <Link href={item.href}>
-            <item.icon className="mr-2 h-4 w-4" />
-            {item.label}
-          </Link>
-        </Button>
-      ))}
+    <nav className="flex flex-col gap-2 md:flex-row md:items-center">
+       <TooltipProvider delayDuration={0}>
+        {NAV_ITEMS.map((item) => (
+          <Tooltip key={item.href}>
+            <TooltipTrigger asChild>
+               <Button
+                variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+                className="justify-start md:justify-center md:h-12 md:w-12 rounded-full"
+                asChild
+              >
+                <Link href={item.href}>
+                  <item.icon className="mr-2 h-5 w-5 md:mr-0" />
+                  <span className="md:hidden">{item.label}</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+             <TooltipContent side="top" className="md:block hidden">
+              {item.label}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </TooltipProvider>
     </nav>
   );
 }
 
 function AppLayoutSkeleton() {
   return (
-     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-             <Logo />
-          </div>
-          <div className="flex-1 p-2 lg:p-4 space-y-2">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+     <div className="flex flex-col min-h-screen">
+        <header className="flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
            <div className="w-full flex-1">
+            <Logo />
            </div>
            <Skeleton className="h-8 w-8 rounded-full" />
         </header>
@@ -77,7 +73,6 @@ function AppLayoutSkeleton() {
             <Skeleton className="w-full h-64" />
         </main>
       </div>
-    </div>
   )
 }
 
@@ -102,29 +97,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Logo />
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <SidebarNav />
-            </nav>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+    <div className="flex flex-col min-h-screen">
+      {/* Mobile Header and Desktop Dock Wrapper */}
+       <header className="flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40 md:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+              <Button variant="outline" size="icon" className="shrink-0">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo />
@@ -133,15 +116,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </nav>
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
-            {/* Can add search bar here if needed */}
+           <div className="w-full flex-1 md:hidden">
+            <Logo />
           </div>
           <UserNav />
         </header>
-        <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-          {children}
-        </main>
+
+      {/* Desktop Dock */}
+      <div className="hidden md:block fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div className="bg-card/60 backdrop-blur-lg border rounded-full p-2 shadow-lg">
+            <SidebarNav />
+        </div>
       </div>
+      
+       <div className="hidden md:flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
+        <Logo />
+        <div className="flex-1" />
+        <UserNav />
+      </div>
+
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+        {children}
+      </main>
     </div>
   );
 }

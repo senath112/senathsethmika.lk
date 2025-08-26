@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --background: 0 0% 94%;
+    --background: 210 40% 98%;
     --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
+    --card: 255 255% 255%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
@@ -60,5 +60,16 @@
   }
   body {
     @apply bg-background text-foreground;
+     background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
   }
+
+  .dark body {
+    background-image: linear-gradient(to right, #243949 0%, #517fa4 100%);
+  }
+}
+
+@layer components {
+    .card, .bg-card {
+        @apply bg-card/60 backdrop-blur-lg;
+    }
 }
