@@ -19,7 +19,7 @@ import * as htmlToImage from 'html-to-image';
 
 function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl }: { user: any, studentName: string, studentOlYear: string, studentId: string, qrCodeUrl: string}) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-xs mx-auto">
+    <div className="bg-white p-6 rounded-lg max-w-xs mx-auto">
         <div className="text-center mb-4">
             <h2 className="text-xl font-bold text-gray-800">{studentName}</h2>
             <p className="text-gray-600 font-mono">{studentOlYear}{studentId}</p>
