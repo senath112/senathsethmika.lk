@@ -20,14 +20,14 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
 
-  const handleEmailSignIn = (e: React.FormEvent) => {
+  const handleEmailSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically handle the Firebase email/password sign-in
-    console.log('Signing in with:', email, password);
+    // Here you would typically handle the Firebase email/password sign-up
+    console.log('Signing up with:', email, password);
     // For now, we'll just navigate to the dashboard on any submission
     window.location.href = '/dashboard';
   };
@@ -39,11 +39,11 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Atom className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">Synapse Learning</CardTitle>
-          <CardDescription>Welcome! Sign in to access your educational hub.</CardDescription>
+          <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
+          <CardDescription>Join Synapse Learning today!</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <form onSubmit={handleEmailSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -66,7 +66,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full h-12 text-base">
-              Sign In
+              Sign Up
             </Button>
           </form>
 
@@ -79,14 +79,14 @@ export default function LoginPage() {
           <Button variant="outline" className="w-full h-12 text-base" asChild>
             <Link href="/dashboard">
               <GoogleIcon className="mr-2 h-5 w-5" />
-              Sign in with Google
+              Sign up with Google
             </Link>
           </Button>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/" className="underline underline-offset-4 hover:text-primary">
+              Sign in
             </Link>
           </p>
 
