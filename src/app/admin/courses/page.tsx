@@ -34,7 +34,7 @@ interface Course {
   description: string;
   image: string;
   aiHint: string;
-  youtubeUrl?: string;
+  youtubeUrls?: string[];
 }
 
 export default function AdminCoursesPage() {
@@ -59,10 +59,11 @@ export default function AdminCoursesPage() {
     const result = await addCourse(null, formData);
 
     if (result?.errors) {
+      const errorMessages = Object.values(result.errors).flat().join(', ');
       toast({
         variant: 'destructive',
         title: 'Error adding course',
-        description: Object.values(result.errors).join(', '),
+        description: errorMessages || 'An unknown error occurred.',
       });
     } else {
       toast({
@@ -106,11 +107,12 @@ export default function AdminCoursesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
-                  <Input
-                    id="youtubeUrl"
-                    name="youtubeUrl"
-                    placeholder="e.g., https://www.youtube.com/watch?v=..."
+                  <Label htmlFor="youtubeUrls">YouTube Video URLs</Label>
+                  <Textarea
+                    id="youtubeUrls"
+                    name="youtubeUrls"
+                    placeholder="Enter one YouTube URL per line"
+                    rows={4}
                   />
                 </div>
               </CardContent>

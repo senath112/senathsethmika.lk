@@ -8,14 +8,17 @@ import { z } from 'zod';
 const courseSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
-  youtubeUrl: z.string().url({ message: 'Please enter a valid YouTube URL.' }).optional().or(z.literal('')),
+  youtubeUrls: z.array(z.string().url({ message: 'Please enter a valid YouTube URL.' })).optional(),
 });
 
 export async function addCourse(prevState: any, formData: FormData) {
+  const youtubeUrlsRaw = formData.get('youtubeUrls') as string;
+  const youtubeUrls = youtubeUrlsRaw.split('\n').map(url => url.trim()).filter(url => url);
+
   const validatedFields = courseSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
-    youtubeUrl: formData.get('youtubeUrl'),
+    youtubeUrls: youtubeUrls.length > 0 ? youtubeUrls : undefined,
   });
 
   if (!validatedFields.success) {
@@ -27,7 +30,9 @@ export async function addCourse(prevState: any, formData: FormData) {
   try {
     const randomImageId = Math.floor(Math.random() * 1000);
     await addDoc(collection(db, "courses"), {
-      ...validatedFields.data,
+      title: validatedFields.data.title,
+      description: validatedFields.data.description,
+      youtubeUrls: validatedFields.data.youtubeUrls || [],
       image: `https://picsum.photos/600/400?random=${randomImageId}`,
       aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`
     });
