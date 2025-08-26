@@ -19,6 +19,7 @@ import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -82,10 +83,22 @@ function AppLayoutSkeleton() {
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  React.useEffect(() => {
+    if (!loading && !user && !pathname.startsWith('/admin')) {
+      router.push('/');
+    }
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return <AppLayoutSkeleton />;
+  }
+  
+  if (!user) {
+    return null; 
   }
 
   return (
