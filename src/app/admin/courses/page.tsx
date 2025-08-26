@@ -32,12 +32,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { addCourse, updateCourseVideos, addCourseDocument } from './actions';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2, Upload, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 interface CourseVideo {
     url: string;
@@ -64,7 +65,10 @@ export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [uploadingToCourse, setUploadingToCourse] = useState<Course | null>(null);
-  const [document, setDocument] = useState<DocumentUpload>({ name: '', type: 'Notes', fileUrl: '' });
+  const [document, setDocument] = useState<Omit<DocumentUpload, 'fileUrl'>>({ name: '', type: 'Notes' });
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   
@@ -140,26 +144,44 @@ export default function AdminCoursesPage() {
   };
 
   const handleAddDocument = async () => {
-    if (!uploadingToCourse || !document.name || !document.fileUrl) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all document fields.' });
+    if (!uploadingToCourse || !document.name || !documentFile) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all document fields and select a file.' });
       return;
     }
 
-    const result = await addCourseDocument(uploadingToCourse.id, uploadingToCourse.title, document);
-    if (result?.errors) {
-      const errorMessages = Object.values(result.errors).flat().join(', ');
-       toast({
-         variant: 'destructive',
-         title: 'Error uploading document',
-         description: errorMessages || 'An unknown error occurred.',
-       });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Document uploaded successfully.',
+    setIsUploading(true);
+
+    try {
+      const storageRef = ref(storage, `course_documents/${uploadingToCourse.id}/${documentFile.name}`);
+      const uploadResult = await uploadBytes(storageRef, documentFile);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+
+      const result = await addCourseDocument(uploadingToCourse.id, uploadingToCourse.title, {
+        ...document,
+        fileUrl: downloadURL,
       });
-      setUploadingToCourse(null);
-      setDocument({ name: '', type: 'Notes', fileUrl: '' });
+      
+      if (result?.errors) {
+        const errorMessages = Object.values(result.errors).flat().join(', ');
+         toast({
+           variant: 'destructive',
+           title: 'Error uploading document',
+           description: errorMessages || 'An unknown error occurred.',
+         });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Document uploaded successfully.',
+        });
+        setUploadingToCourse(null);
+        setDocument({ name: '', type: 'Notes' });
+        setDocumentFile(null);
+      }
+    } catch (error) {
+      console.error("File upload error: ", error);
+      toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the file to storage.' });
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -360,7 +382,13 @@ export default function AdminCoursesPage() {
       </Dialog>
 
       {/* Upload Document Dialog */}
-       <Dialog open={!!uploadingToCourse} onOpenChange={(isOpen) => !isOpen && setUploadingToCourse(null)}>
+       <Dialog open={!!uploadingToCourse} onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setUploadingToCourse(null);
+              setDocumentFile(null);
+              setDocument({ name: '', type: 'Notes' });
+            }
+       }}>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Upload Document for {uploadingToCourse?.title}</DialogTitle>
@@ -388,15 +416,27 @@ export default function AdminCoursesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="doc-url">File URL</Label>
-                <Input id="doc-url" value={document.fileUrl} onChange={(e) => setDocument(d => ({ ...d, fileUrl: e.target.value }))} placeholder="https://example.com/document.pdf" />
+                <Label htmlFor="doc-file">PDF File</Label>
+                <Input id="doc-file" type="file" accept="application/pdf" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
               </div>
             </div>
             <DialogFooter>
                 <DialogClose asChild>
                     <Button variant="outline">Cancel</Button>
                 </DialogClose>
-                <Button onClick={handleAddDocument}>Upload Document</Button>
+                <Button onClick={handleAddDocument} disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Document
+                    </>
+                  )}
+                </Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

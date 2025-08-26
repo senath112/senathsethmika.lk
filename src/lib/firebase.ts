@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // TODO: It's recommended to move this configuration to environment variables
 // Your web app's Firebase configuration
@@ -10,7 +11,7 @@ const firebaseConfig = {
   authDomain: "synapse-learning-xpw9a.firebaseapp.com",
   databaseURL: "https://synapse-learning-xpw9a-default-rtdb.firebaseio.com",
   projectId: "synapse-learning-xpw9a",
-  storageBucket: "synapse-learning-xpw9a.firebasestorage.app",
+  storageBucket: "synapse-learning-xpw9a.appspot.com",
   messagingSenderId: "413572779495",
   appId: "1:413572779495:web:86b1b59ecae1915aa7c142"
 };
@@ -19,5 +20,6 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
-export { app, db, auth };
+export { app, db, auth, storage };
