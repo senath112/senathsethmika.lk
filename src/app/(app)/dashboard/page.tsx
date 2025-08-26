@@ -51,6 +51,8 @@ function StudentIdCard() {
   const [studentOlYear, setStudentOlYear] = useState("");
   const [loading, setLoading] = useState(true);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [downloadTrigger, setDownloadTrigger] = useState(0);
+
 
   const idCardRef = useRef<HTMLDivElement>(null);
   const minimalIdCardRef = useRef<HTMLDivElement>(null);
@@ -81,39 +83,43 @@ function StudentIdCard() {
   }, [user]);
 
   useEffect(() => {
-    if (generatedAt === null) return;
-    
-    const downloadImage = () => {
-      if (minimalIdCardRef.current === null) {
-          return;
-      }
-      htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
-        .then((dataUrl) => {
-          const link = document.createElement('a');
-          link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
-          link.href = dataUrl;
-          link.click();
-        })
-        .catch((err) => {
-          console.log(err);
-          toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to download ID card image.",
-          })
-        })
-        .finally(() => {
-          // Reset generatedAt after download to allow re-triggering
-          setGeneratedAt(null);
-        });
+    if (downloadTrigger === 0) return;
+
+    const generateAndDownload = async () => {
+        if (minimalIdCardRef.current === null) {
+            return;
+        }
+
+        // Set generatedAt right before image generation
+        const currentTime = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+        setGeneratedAt(currentTime);
+
+        // Allow state to update before capturing
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
+            .then((dataUrl) => {
+            const link = document.createElement('a');
+            link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
+            link.href = dataUrl;
+            link.click();
+            })
+            .catch((err) => {
+            console.log(err);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to download ID card image.",
+            })
+            }).finally(() => {
+                // Reset for next download
+                setGeneratedAt(null); 
+            });
     }
+    
+    generateAndDownload();
 
-    // This timeout ensures the state has updated and the component has re-rendered
-    const timer = setTimeout(downloadImage, 100);
-
-    return () => clearTimeout(timer);
-
-  }, [generatedAt, toast, user]);
+  }, [downloadTrigger, user, toast]);
 
 
   const handleSave = async () => {
@@ -139,8 +145,7 @@ function StudentIdCard() {
   };
   
   const handleDownloadClick = () => {
-    // Set the generation time to trigger the useEffect for download
-    setGeneratedAt(format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+    setDownloadTrigger(prev => prev + 1);
   }
 
   if (loading) {
