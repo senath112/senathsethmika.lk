@@ -137,6 +137,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
         {children}
       </main>
+
+      <footer className="bg-card/60 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground">
+        <p className="font-bold">Senath Sethmika</p>
+        <p className="font-medium text-primary">විද්‍යාවේ හදගැස්ම</p>
+        <div className="flex justify-center gap-4 mt-2 text-sm">
+            <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
+            <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
+        </div>
+      </footer>
     </div>
   );
 }
