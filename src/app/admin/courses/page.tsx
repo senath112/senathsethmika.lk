@@ -36,7 +36,7 @@ import { db, storage } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Plus, Trash2, Upload, Loader2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Upload, Loader2, Pencil, Link as LinkIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -76,6 +76,7 @@ export default function AdminCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   
   const [document, setDocument] = useState<Omit<DocumentUpload, 'fileUrl'>>({ name: '', type: 'Notes' });
+  const [documentUrl, setDocumentUrl] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [courseDocuments, setCourseDocuments] = useState<Document[]>([]);
@@ -162,42 +163,58 @@ export default function AdminCoursesPage() {
      }
   };
 
-  const handleAddDocument = async () => {
-    if (!editingCourse || !document.name || !documentFile) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all document fields and select a file.' });
+  const handleAddDocument = async (uploadType: 'file' | 'url') => {
+    if (!editingCourse || !document.name) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please provide a document name.' });
       return;
     }
 
     setIsUploading(true);
-
+    let finalFileUrl = '';
+    
     try {
-      const storageRef = ref(storage, `course_documents/${editingCourse.id}/${documentFile.name}`);
-      const uploadResult = await uploadBytes(storageRef, documentFile);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
+        if (uploadType === 'file') {
+            if (!documentFile) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Please select a file to upload.' });
+                setIsUploading(false);
+                return;
+            }
+            const storageRef = ref(storage, `course_documents/${editingCourse.id}/${documentFile.name}`);
+            const uploadResult = await uploadBytes(storageRef, documentFile);
+            finalFileUrl = await getDownloadURL(uploadResult.ref);
+        } else { // url
+            if (!documentUrl) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Please provide a document URL.' });
+                setIsUploading(false);
+                return;
+            }
+            finalFileUrl = documentUrl;
+        }
 
       const result = await addCourseDocument(editingCourse.id, editingCourse.title, {
         ...document,
-        fileUrl: downloadURL,
+        fileUrl: finalFileUrl,
       });
       
       if (result?.errors) {
         const errorMessages = Object.values(result.errors).flat().join(', ');
          toast({
            variant: 'destructive',
-           title: 'Error uploading document',
+           title: 'Error adding document',
            description: errorMessages || 'An unknown error occurred.',
          });
       } else {
         toast({
           title: 'Success',
-          description: 'Document uploaded successfully.',
+          description: 'Document added successfully.',
         });
         setDocument({ name: '', type: 'Notes' });
         setDocumentFile(null);
+        setDocumentUrl('');
       }
     } catch (error) {
-      console.error("File upload error: ", error);
-      toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the file to storage.' });
+      console.error("Document add error: ", error);
+      toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not add the document.' });
     } finally {
       setIsUploading(false);
     }
@@ -406,47 +423,87 @@ export default function AdminCoursesPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                         {/* Upload Form */}
                         <div className="space-y-4">
-                            <h3 className="font-semibold">Upload New Tute</h3>
-                             <div className="space-y-2">
-                                <Label htmlFor="doc-name">Document Name</Label>
-                                <Input id="doc-name" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
-                              </div>
-                               <div className="space-y-2">
-                                <Label htmlFor="doc-type">Document Type</Label>
-                                <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
-                                  <SelectTrigger id="doc-type">
-                                    <SelectValue placeholder="Select a type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Notes">Notes</SelectItem>
-                                    <SelectItem value="Syllabus">Syllabus</SelectItem>
-                                    <SelectItem value="Tutorial">Tutorial</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="doc-file">PDF File</Label>
-                                <Input id="doc-file" type="file" accept="application/pdf" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
-                              </div>
-                               <Button onClick={handleAddDocument} disabled={isUploading}>
-                                  {isUploading ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Uploading...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Upload className="mr-2 h-4 w-4" />
-                                      Upload Document
-                                    </>
-                                  )}
-                                </Button>
+                            <h3 className="font-semibold">Add New Document</h3>
+                            <Tabs defaultValue="upload" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="upload">Upload File</TabsTrigger>
+                                    <TabsTrigger value="url">From URL</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="upload" className="space-y-4 pt-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="doc-name-file">Document Name</Label>
+                                        <Input id="doc-name-file" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
+                                      </div>
+                                       <div className="space-y-2">
+                                        <Label htmlFor="doc-type-file">Document Type</Label>
+                                        <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
+                                          <SelectTrigger id="doc-type-file">
+                                            <SelectValue placeholder="Select a type" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Notes">Notes</SelectItem>
+                                            <SelectItem value="Syllabus">Syllabus</SelectItem>
+                                            <SelectItem value="Tutorial">Tutorial</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="doc-file">PDF File</Label>
+                                        <Input id="doc-file" type="file" accept="application/pdf" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
+                                      </div>
+                                       <Button onClick={() => handleAddDocument('file')} disabled={isUploading}>
+                                          {isUploading ? (
+                                            <>
+                                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                              Uploading...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Upload className="mr-2 h-4 w-4" />
+                                              Upload Document
+                                            </>
+                                          )}
+                                        </Button>
+                                </TabsContent>
+                                <TabsContent value="url" className="space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="doc-name-url">Document Name</Label>
+                                        <Input id="doc-name-url" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
+                                      </div>
+                                       <div className="space-y-2">
+                                        <Label htmlFor="doc-type-url">Document Type</Label>
+                                        <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
+                                          <SelectTrigger id="doc-type-url">
+                                            <SelectValue placeholder="Select a type" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Notes">Notes</SelectItem>
+                                            <SelectItem value="Syllabus">Syllabus</SelectItem>
+                                            <SelectItem value="Tutorial">Tutorial</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="doc-url">Document URL</Label>
+                                        <Input id="doc-url" type="url" placeholder="https://example.com/document.pdf" value={documentUrl} onChange={(e) => setDocumentUrl(e.target.value)} />
+                                      </div>
+                                       <Button onClick={() => handleAddDocument('url')} disabled={isUploading}>
+                                         {isUploading ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <LinkIcon className="mr-2 h-4 w-4" />
+                                          )}
+                                          Add from URL
+                                        </Button>
+                                </TabsContent>
+                            </Tabs>
                         </div>
 
                          {/* Existing Documents List */}
                         <div className="space-y-4">
-                            <h3 className="font-semibold">Uploaded Tutes</h3>
+                            <h3 className="font-semibold">Uploaded Documents</h3>
                              <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
                                 {courseDocuments.length > 0 ? (
                                     courseDocuments.map(doc => (
@@ -473,5 +530,3 @@ export default function AdminCoursesPage() {
     </>
   );
 }
-
-    
