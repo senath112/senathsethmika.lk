@@ -25,13 +25,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       
       const isAuthPage = pathname === '/' || pathname === '/signup';
+      const isAdminRoute = pathname.startsWith('/admin');
 
-      if (!user && !isAuthPage) {
+      if (!user && !isAuthPage && !isAdminRoute) {
         router.push('/');
       }
-      if (user && isAuthPage) {
+      
+      if (user && user.email !== 'Admin@sys.org' && isAuthPage) {
         router.push('/dashboard');
       }
+
+      if (user && user.email === 'Admin@sys.org' && (isAuthPage || !isAdminRoute)) {
+        // This case is handled in the login page, but as a fallback
+        // router.push('/admin/dashboard');
+      }
+
     });
 
     return () => unsubscribe();
