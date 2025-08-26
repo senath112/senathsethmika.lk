@@ -1,61 +1,72 @@
+
+'use client';
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
+import { useEffect, useState } from "react";
+import { collection, onSnapshot, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const courses = [
-  {
-    title: 'Advanced Genetics',
-    description: 'Explore the cutting-edge of genetic research and technology.',
-    image: 'https://picsum.photos/600/400?random=1',
-    aiHint: 'science genetics'
-  },
-  {
-    title: 'Organic Chemistry II',
-    description: 'Deep dive into complex organic reactions and synthesis.',
-    image: 'https://picsum.photos/600/400?random=2',
-    aiHint: 'science chemistry'
-  },
-  {
-    title: 'Quantum Physics',
-    description: 'Unravel the mysteries of the universe at the subatomic level.',
-    image: 'https://picsum.photos/600/400?random=3',
-    aiHint: 'science physics'
-  },
-  {
-    title: 'Cellular Biology',
-    description: 'A comprehensive study of cell structure, function, and signaling.',
-    image: 'https://picsum.photos/600/400?random=4',
-    aiHint: 'science biology'
-  },
-    {
-    title: 'Environmental Science',
-    description: 'Understand the interactions between physical, chemical, and biological components of the environment.',
-    image: 'https://picsum.photos/600/400?random=5',
-    aiHint: 'science environment'
-  },
-  {
-    title: 'Astrophysics',
-    description: 'Study the physical nature of stars, galaxies, and the cosmos.',
-    image: 'https://picsum.photos/600/400?random=6',
-    aiHint: 'science space'
-  },
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  aiHint: string;
+}
+
+function CourseSkeleton() {
+    return (
+        <Card className="flex flex-col overflow-hidden shadow-lg">
+            <Skeleton className="h-48 w-full" />
+            <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full mt-2" />
+                 <Skeleton className="h-4 w-1/2 mt-1" />
+            </CardHeader>
+            <CardContent className="flex-grow" />
+            <CardFooter>
+                <Skeleton className="h-10 w-full" />
+            </CardFooter>
+        </Card>
+    )
+}
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const q = query(collection(db, 'courses'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const coursesData: Course[] = [];
+      querySnapshot.forEach((doc) => {
+        coursesData.push({ id: doc.id, ...(doc.data() as Omit<Course, 'id'>) });
+      });
+      setCourses(coursesData);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <>
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Courses</h1>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {courses.map((course) => (
-          <Card key={course.title} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+        {loading && Array.from({length: 6}).map((_, i) => <CourseSkeleton key={i} />)}
+        {!loading && courses.map((course) => (
+          <Card key={course.id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
             <div className="relative h-48 w-full">
               <Image
                 src={course.image}
                 alt={course.title}
-                layout="fill"
-                objectFit="cover"
+                fill
+                className="object-cover"
                 data-ai-hint={course.aiHint}
               />
             </div>
