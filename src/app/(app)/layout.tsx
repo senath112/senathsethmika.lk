@@ -134,11 +134,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pb-24 md:pb-6">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24">
         {children}
       </main>
 
-      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground">
+      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground md:pl-24">
         <p className="font-bold">Senath Sethmika</p>
         <p className="font-medium text-primary">විද්‍යාවේ හදගැස්ම</p>
         <div className="flex justify-center gap-4 mt-2 text-sm">
