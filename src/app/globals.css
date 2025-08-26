@@ -58,6 +58,9 @@
   * {
     @apply border-border;
   }
+  html {
+      @apply scroll-smooth;
+  }
   body {
     @apply bg-background text-foreground;
      background-image: linear-gradient(to top, #d299c2 0%, #fef9d7 100%);

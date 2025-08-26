@@ -20,13 +20,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/lectures', label: 'Lectures', icon: PlayCircle },
-  { href: '/courses', label: 'Courses', icon: GraduationCap },
-  { href: '/documents', label: 'Documents', icon: FileText },
-  { href: '/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-sky-500' },
+  { href: '/lectures', label: 'Lectures', icon: PlayCircle, color: 'text-red-500' },
+  { href: '/courses', label: 'Courses', icon: GraduationCap, color: 'text-emerald-500' },
+  { href: '/documents', label: 'Documents', icon: FileText, color: 'text-amber-500' },
+  { href: '/billing', label: 'Billing', icon: CreditCard, color: 'text-violet-500' },
 ];
 
 function SidebarNav() {
@@ -44,7 +45,7 @@ function SidebarNav() {
                 asChild
               >
                 <Link href={item.href}>
-                  <item.icon className="mr-2 h-5 w-5 md:mr-0" />
+                  <item.icon className={cn("mr-2 h-5 w-5 md:mr-0", item.color)} />
                   <span className="md:hidden">{item.label}</span>
                 </Link>
               </Button>
@@ -128,16 +129,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Desktop Dock */}
       <div className="hidden md:block fixed top-1/2 -translate-y-1/2 left-4 z-50">
-        <div className="bg-card/60 backdrop-blur-lg border rounded-full p-2 shadow-lg">
+        <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg">
             <SidebarNav />
         </div>
       </div>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pb-24 md:pb-6">
         {children}
       </main>
 
-      <footer className="bg-card/60 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground">
+      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground">
         <p className="font-bold">Senath Sethmika</p>
         <p className="font-medium text-primary">විද්‍යාවේ හදගැස්ම</p>
         <div className="flex justify-center gap-4 mt-2 text-sm">
