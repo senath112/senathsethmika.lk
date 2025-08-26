@@ -5,16 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Edit, PlayCircle, Save, X } from "lucide-react";
+import { ArrowRight, BookOpen, Download, Edit, PlayCircle, Save, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { saveStudentDetails } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import * as htmlToImage from 'html-to-image';
 
 function StudentIdCard() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ function StudentIdCard() {
   const [studentMajor, setStudentMajor] = useState("");
   const [studentOlYear, setStudentOlYear] = useState("");
   const [loading, setLoading] = useState(true);
+  const idCardRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
 
@@ -72,6 +74,28 @@ function StudentIdCard() {
     }
   };
 
+  const handleDownloadImage = () => {
+    if (idCardRef.current === null) {
+      return;
+    }
+
+    htmlToImage.toPng(idCardRef.current, { cacheBust: true, pixelRatio: 2 })
+      .then((dataUrl) => {
+        const link = document.createElement('a');
+        link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to download ID card image.",
+        })
+      });
+  };
+
 
   if (loading) {
     return (
@@ -89,61 +113,66 @@ function StudentIdCard() {
 
   return (
     <Card className="overflow-hidden shadow-lg col-span-1 lg:col-span-2">
-       <div className="bg-primary/10 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
-        <Avatar className="h-24 w-24 border-4 border-white shadow-md">
-          <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="Student Name" data-ai-hint="person" />
-          <AvatarFallback>{studentName?.charAt(0) || 'S'}</AvatarFallback>
-        </Avatar>
-        <div className="text-center sm:text-left flex-grow">
-          {isEditing ? (
-            <div className="space-y-2">
-              <div>
-                <Label htmlFor="studentName" className="sr-only">Student Name</Label>
-                <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="text-2xl font-bold p-0 border-none shadow-none focus-visible:ring-0" />
+       <div ref={idCardRef} className="bg-card">
+         <div className="bg-primary/10 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
+          <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+            <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="Student Name" data-ai-hint="person" />
+            <AvatarFallback>{studentName?.charAt(0) || 'S'}</AvatarFallback>
+          </Avatar>
+          <div className="text-center sm:text-left flex-grow">
+            {isEditing ? (
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor="studentName" className="sr-only">Student Name</Label>
+                  <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="text-2xl font-bold p-0 border-none shadow-none focus-visible:ring-0" />
+                </div>
+                <div>
+                  <Label htmlFor="studentMajor" className="sr-only">Major</Label>
+                  <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" />
+                </div>
               </div>
+            ) : (
               <div>
-                <Label htmlFor="studentMajor" className="sr-only">Major</Label>
-                <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" />
+                <CardTitle className="text-2xl">{studentName}</CardTitle>
+                <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>
               </div>
-            </div>
-          ) : (
-            <div>
-              <CardTitle className="text-2xl">{studentName}</CardTitle>
-              <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-         <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <Button size="icon" onClick={handleSave}><Save /></Button>
-              <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X /></Button>
-            </>
-          ) : (
-            <Button size="icon" variant="outline" onClick={() => setIsEditing(true)}>
-              <Edit />
+        <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Student ID</p>
+            <p className="font-semibold">{studentOlYear}{user?.uid.substring(0, 5).toUpperCase() || 'XXXXX'}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
+            <p className="font-semibold">12/2026</p>
+          </div>
+          <div className="flex justify-end">
+            <Image
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`}
+              alt="QR Code"
+              width={100}
+              height={100}
+              className="rounded-md"
+              data-ai-hint="qr code"
+            />
+          </div>
+        </CardContent>
+       </div>
+       <div className="p-4 sm:p-6 border-t flex items-center justify-end gap-2">
+           <Button size="icon" variant="outline" onClick={handleDownloadImage}>
+              <Download />
             </Button>
-          )}
+            {isEditing ? (
+              <>
+                <Button size="icon" onClick={handleSave}><Save /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X /></Button>
+              </>
+            ) : (
+              <Button size="icon" variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit />
+              </Button>
+            )}
         </div>
-      </div>
-      <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-          <p className="font-semibold">{studentOlYear}{user?.uid.substring(0, 5).toUpperCase() || 'XXXXX'}</p>
-          <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
-          <p className="font-semibold">12/2026</p>
-        </div>
-        <div className="flex justify-end">
-          <Image
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`}
-            alt="QR Code"
-            width={100}
-            height={100}
-            className="rounded-md"
-            data-ai-hint="qr code"
-          />
-        </div>
-      </CardContent>
     </Card>
   );
 }
