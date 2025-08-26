@@ -22,8 +22,9 @@ import { collection, onSnapshot, query, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { requestEnrollment } from '@/app/(app)/courses/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { CameraOff } from 'lucide-react';
+import { Camera, CameraOff, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 
 interface Course {
@@ -38,6 +39,16 @@ interface Student {
   photoURL?: string;
 }
 
+const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+    const minEdgePercentage = 0.7; // 70%
+    const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+    const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+    return {
+        width: qrboxSize,
+        height: qrboxSize,
+    };
+}
+
 export default function ScannerPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -46,17 +57,12 @@ export default function ScannerPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  
-  useEffect(() => {
-    // Temporarily disabled camera check until a compatible QR library is added
-    // navigator.mediaDevices.getUserMedia({ video: true })
-    //   .then(() => setHasCameraPermission(true))
-    //   .catch(() => setHasCameraPermission(false));
-  }, []);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = "qr-reader";
 
   useEffect(() => {
     const q = query(collection(db, 'courses'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribeCourses = onSnapshot(q, (querySnapshot) => {
       const coursesData: Course[] = [];
       querySnapshot.forEach((doc) => {
         coursesData.push({ id: doc.id, ...doc.data() } as Course);
@@ -64,15 +70,56 @@ export default function ScannerPage() {
       setCourses(coursesData);
     });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribeCourses();
+        if (scannerRef.current && scannerRef.current.isScanning) {
+            scannerRef.current.stop().catch(err => console.error("Failed to stop scanner on unmount", err));
+        }
+    };
   }, []);
 
+  useEffect(() => {
+    if (isScanning && hasCameraPermission !== false) {
+        const scanner = new Html5Qrcode(scannerContainerId);
+        scannerRef.current = scanner;
 
-  const handleScanSuccess = async (result: any) => {
-      if (result && isScanning) {
+        const startScanner = async () => {
+            try {
+                await Html5Qrcode.getCameras();
+                setHasCameraPermission(true);
+                scanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: qrboxFunction },
+                    handleScanSuccess,
+                    (errorMessage) => { /* console.error("QR Scan Error:", errorMessage) */ }
+                ).catch(err => {
+                    console.error("Scanner start error:", err);
+                    setHasCameraPermission(false);
+                });
+            } catch (err) {
+                 console.error("Camera permission error:", err);
+                 setHasCameraPermission(false);
+                 toast({
+                    variant: 'destructive',
+                    title: 'Camera Error',
+                    description: 'Could not access camera. Please check permissions.',
+                });
+            }
+        };
+
+        startScanner();
+    }
+  }, [isScanning, hasCameraPermission]);
+
+
+  const handleScanSuccess = async (decodedText: string, decodedResult: any) => {
+      if (isScanning) {
         setIsScanning(false);
+        if (scannerRef.current && scannerRef.current.isScanning) {
+           scannerRef.current.stop().catch(err => console.error("Failed to stop scanner", err));
+        }
+        
         try {
-            const decodedText = result?.getText();
             const studentRef = doc(db, 'students', decodedText);
             const studentSnap = await getDoc(studentRef);
 
@@ -133,14 +180,22 @@ export default function ScannerPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
-            <Alert variant="default" className="w-auto absolute">
-                <CameraOff className="h-4 w-4" />
-                <AlertTitle>Scanner Temporarily Unavailable</AlertTitle>
-                <AlertDescription>
-                    The QR code scanner is currently being updated.
-                </AlertDescription>
-            </Alert>
+          <div id={scannerContainerId} className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
+            {hasCameraPermission === false && (
+                <Alert variant="destructive" className="w-auto">
+                    <CameraOff className="h-4 w-4" />
+                    <AlertTitle>Camera Access Denied</AlertTitle>
+                    <AlertDescription>
+                        Please enable camera permissions in your browser settings.
+                    </AlertDescription>
+                </Alert>
+            )}
+            {hasCameraPermission === null && (
+                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p>Initializing Camera...</p>
+                 </div>
+            )}
             {!isScanning && scannedStudent && (
               <div className="absolute inset-0 bg-background flex flex-col items-center justify-center text-center p-4">
                  <Avatar className="h-24 w-24 mb-4">
