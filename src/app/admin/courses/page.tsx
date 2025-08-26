@@ -31,19 +31,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { addCourse, updateCourseVideos, addCourseDocument } from './actions';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Plus, Trash2, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Upload, Loader2, Pencil } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CourseVideo {
     url: string;
     description: string;
     thumbnail: string;
+}
+
+interface Document {
+    id: string;
+    name: string;
+    type: string;
+    fileUrl: string;
+    date: string;
 }
 
 interface Course {
@@ -53,6 +62,7 @@ interface Course {
   image: string;
   aiHint: string;
   youtubeVideos?: CourseVideo[];
+  documents?: Document[];
 }
 
 interface DocumentUpload {
@@ -64,10 +74,11 @@ interface DocumentUpload {
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [uploadingToCourse, setUploadingToCourse] = useState<Course | null>(null);
+  
   const [document, setDocument] = useState<Omit<DocumentUpload, 'fileUrl'>>({ name: '', type: 'Notes' });
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [courseDocuments, setCourseDocuments] = useState<Document[]>([]);
   
   const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
@@ -95,8 +106,17 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     if (editingCourse) {
       setVideos(editingCourse.youtubeVideos?.map(v => ({...v, thumbnail: v.thumbnail || ''})) || [{ url: '', description: '', thumbnail: '' }]);
+      // Fetch documents for the editing course
+      const docQuery = query(collection(db, 'documents'), where('courseId', '==', editingCourse.id));
+      const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
+        const docs: Document[] = [];
+        snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() } as Document));
+        setCourseDocuments(docs);
+      });
+      return () => unsubscribeDocs();
     } else {
       setVideos([{ url: '', description: '', thumbnail: '' }]);
+      setCourseDocuments([]);
     }
   }, [editingCourse]);
 
@@ -139,12 +159,11 @@ export default function AdminCoursesPage() {
          title: 'Success',
          description: 'YouTube videos updated successfully.',
        });
-       setEditingCourse(null);
      }
   };
 
   const handleAddDocument = async () => {
-    if (!uploadingToCourse || !document.name || !documentFile) {
+    if (!editingCourse || !document.name || !documentFile) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please fill in all document fields and select a file.' });
       return;
     }
@@ -152,11 +171,11 @@ export default function AdminCoursesPage() {
     setIsUploading(true);
 
     try {
-      const storageRef = ref(storage, `course_documents/${uploadingToCourse.id}/${documentFile.name}`);
+      const storageRef = ref(storage, `course_documents/${editingCourse.id}/${documentFile.name}`);
       const uploadResult = await uploadBytes(storageRef, documentFile);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
-      const result = await addCourseDocument(uploadingToCourse.id, uploadingToCourse.title, {
+      const result = await addCourseDocument(editingCourse.id, editingCourse.title, {
         ...document,
         fileUrl: downloadURL,
       });
@@ -173,7 +192,6 @@ export default function AdminCoursesPage() {
           title: 'Success',
           description: 'Document uploaded successfully.',
         });
-        setUploadingToCourse(null);
         setDocument({ name: '', type: 'Notes' });
         setDocumentFile(null);
       }
@@ -322,8 +340,10 @@ export default function AdminCoursesPage() {
                       </TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
                       <TableCell className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setEditingCourse(course)}>Edit Videos</Button>
-                        <Button variant="outline" size="sm" onClick={() => setUploadingToCourse(course)}>Upload Doc</Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditingCourse(course)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -334,112 +354,124 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
-      {/* Edit Videos Dialog */}
+      {/* Edit Course Dialog */}
       <Dialog open={!!editingCourse} onOpenChange={(isOpen) => !isOpen && setEditingCourse(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
             <DialogHeader>
-                <DialogTitle>Edit YouTube Videos for {editingCourse?.title}</DialogTitle>
+                <DialogTitle>Edit Course: {editingCourse?.title}</DialogTitle>
                 <DialogDescription>
-                    Add, remove, or edit YouTube video links and their descriptions.
+                    Manage videos and documents for this course.
                 </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
-                {videos.map((video, index) => (
-                  <div key={index} className="space-y-2 p-2 border rounded-md">
-                     <div className="flex items-center gap-2">
-                        <Input
-                          value={video.url}
-                          onChange={(e) => handleVideoChange(index, 'url', e.target.value, false)}
-                          placeholder="YouTube URL"
-                        />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, false)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                     </div>
-                    <Input
-                      value={video.description}
-                      onChange={(e) => handleVideoChange(index, 'description', e.target.value, false)}
-                      placeholder="Description (optional)"
-                    />
-                     <Input
-                      value={video.thumbnail}
-                      onChange={(e) => handleVideoChange(index, 'thumbnail', e.target.value, false)}
-                      placeholder="Thumbnail URL (optional)"
-                    />
-                  </div>
-                ))}
-                 <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(false)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Video
-                 </Button>
-            </div>
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button onClick={handleUpdateVideos}>Save Changes</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Tabs defaultValue="videos" className="w-full">
+                <TabsList>
+                    <TabsTrigger value="videos">Videos</TabsTrigger>
+                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+                <TabsContent value="videos">
+                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 py-4">
+                        {videos.map((video, index) => (
+                          <div key={index} className="space-y-2 p-2 border rounded-md">
+                             <div className="flex items-center gap-2">
+                                <Input
+                                  value={video.url}
+                                  onChange={(e) => handleVideoChange(index, 'url', e.target.value, false)}
+                                  placeholder="YouTube URL"
+                                />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, false)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                             </div>
+                            <Input
+                              value={video.description}
+                              onChange={(e) => handleVideoChange(index, 'description', e.target.value, false)}
+                              placeholder="Description (optional)"
+                            />
+                             <Input
+                              value={video.thumbnail}
+                              onChange={(e) => handleVideoChange(index, 'thumbnail', e.target.value, false)}
+                              placeholder="Thumbnail URL (optional)"
+                            />
+                          </div>
+                        ))}
+                         <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(false)}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Video
+                         </Button>
+                    </div>
+                    <DialogFooter className="pt-4 border-t">
+                        <Button onClick={handleUpdateVideos}>Save Video Changes</Button>
+                    </DialogFooter>
+                </TabsContent>
+                <TabsContent value="documents">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                        {/* Upload Form */}
+                        <div className="space-y-4">
+                            <h3 className="font-semibold">Upload New Tute</h3>
+                             <div className="space-y-2">
+                                <Label htmlFor="doc-name">Document Name</Label>
+                                <Input id="doc-name" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
+                              </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="doc-type">Document Type</Label>
+                                <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
+                                  <SelectTrigger id="doc-type">
+                                    <SelectValue placeholder="Select a type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Notes">Notes</SelectItem>
+                                    <SelectItem value="Syllabus">Syllabus</SelectItem>
+                                    <SelectItem value="Tutorial">Tutorial</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="doc-file">PDF File</Label>
+                                <Input id="doc-file" type="file" accept="application/pdf" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
+                              </div>
+                               <Button onClick={handleAddDocument} disabled={isUploading}>
+                                  {isUploading ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Uploading...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      Upload Document
+                                    </>
+                                  )}
+                                </Button>
+                        </div>
 
-      {/* Upload Document Dialog */}
-       <Dialog open={!!uploadingToCourse} onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setUploadingToCourse(null);
-              setDocumentFile(null);
-              setDocument({ name: '', type: 'Notes' });
-            }
-       }}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Upload Document for {uploadingToCourse?.title}</DialogTitle>
-                <DialogDescription>
-                    Add a new document like a syllabus or lecture notes to this course.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="doc-name">Document Name</Label>
-                <Input id="doc-name" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="doc-type">Document Type</Label>
-                <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
-                  <SelectTrigger id="doc-type">
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Notes">Notes</SelectItem>
-                    <SelectItem value="Syllabus">Syllabus</SelectItem>
-                    <SelectItem value="Tutorial">Tutorial</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="doc-file">PDF File</Label>
-                <Input id="doc-file" type="file" accept="application/pdf" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
-              </div>
-            </div>
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button onClick={handleAddDocument} disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Document
-                    </>
-                  )}
-                </Button>
-            </DialogFooter>
+                         {/* Existing Documents List */}
+                        <div className="space-y-4">
+                            <h3 className="font-semibold">Uploaded Tutes</h3>
+                             <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
+                                {courseDocuments.length > 0 ? (
+                                    courseDocuments.map(doc => (
+                                        <div key={doc.id} className="flex justify-between items-center p-2 border rounded-md">
+                                            <p className="text-sm font-medium">{doc.name}</p>
+                                            <Badge variant="secondary">{doc.type}</Badge>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No documents uploaded for this course yet.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                     <DialogFooter className="pt-4 border-t">
+                        <DialogClose asChild>
+                            <Button variant="outline">Close</Button>
+                        </DialogClose>
+                     </DialogFooter>
+                </TabsContent>
+            </Tabs>
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
+    
