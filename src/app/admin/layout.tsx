@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Menu,
   BookOpen,
+  ClipboardCheck,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { href: '/admin/enrollments', label: 'Enrollments', icon: ClipboardCheck },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 

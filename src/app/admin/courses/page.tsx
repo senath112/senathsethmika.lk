@@ -34,6 +34,7 @@ interface Course {
   description: string;
   image: string;
   aiHint: string;
+  youtubeUrl?: string;
 }
 
 export default function AdminCoursesPage() {
@@ -102,6 +103,14 @@ export default function AdminCoursesPage() {
                     name="description"
                     placeholder="A brief summary of the course."
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="youtubeUrl">YouTube Video URL</Label>
+                  <Input
+                    id="youtubeUrl"
+                    name="youtubeUrl"
+                    placeholder="e.g., https://www.youtube.com/watch?v=..."
                   />
                 </div>
               </CardContent>
