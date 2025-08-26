@@ -54,12 +54,11 @@ export async function addCourse(prevState: any, formData: FormData) {
   }
 
   try {
-    const randomImageId = Math.floor(Math.random() * 1000);
     await addDoc(collection(db, "courses"), {
       title: validatedFields.data.title,
       description: validatedFields.data.description,
       youtubeVideos: validatedFields.data.youtubeVideos || [],
-      image: validatedFields.data.image || `https://picsum.photos/600/400?random=${randomImageId}`,
+      image: validatedFields.data.image || `https://picsum.photos/600/400`,
       aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`
     });
     return { message: 'Course added successfully.' };
