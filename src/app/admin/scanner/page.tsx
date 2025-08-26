@@ -24,7 +24,7 @@ import { requestEnrollment } from '@/app/(app)/courses/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Camera, CameraOff, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 
 interface Course {
@@ -53,12 +53,16 @@ export default function ScannerPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [scannedStudent, setScannedStudent] = useState<Student | null>(null);
-  const [isScanning, setIsScanning] = useState(true);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = "qr-reader";
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'courses'));
@@ -72,52 +76,59 @@ export default function ScannerPage() {
 
     return () => {
         unsubscribeCourses();
-        if (scannerRef.current && scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch(err => console.error("Failed to stop scanner on unmount", err));
-        }
     };
   }, []);
 
   useEffect(() => {
-    if (isScanning && hasCameraPermission !== false) {
-        const scanner = new Html5Qrcode(scannerContainerId);
-        scannerRef.current = scanner;
+    if (!isClient) {
+        return;
+    }
+    
+    // Cleanup function to stop the scanner
+    const cleanup = () => {
+        if (html5QrcodeRef.current && html5QrcodeRef.current.isScanning) {
+            html5QrcodeRef.current.stop().catch(err => console.error("Failed to stop scanner on cleanup", err));
+        }
+    }
 
-        const startScanner = async () => {
-            try {
-                await Html5Qrcode.getCameras();
+    const startScanner = async () => {
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length) {
                 setHasCameraPermission(true);
+                const scanner = new Html5Qrcode(scannerContainerId);
+                html5QrcodeRef.current = scanner;
+
                 scanner.start(
                     { facingMode: "environment" },
                     { fps: 10, qrbox: qrboxFunction },
                     handleScanSuccess,
-                    (errorMessage) => { /* console.error("QR Scan Error:", errorMessage) */ }
+                    (errorMessage) => { /* console.log("QR Scan Error:", errorMessage) */ }
                 ).catch(err => {
                     console.error("Scanner start error:", err);
                     setHasCameraPermission(false);
+                    toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not start the camera.'});
                 });
-            } catch (err) {
-                 console.error("Camera permission error:", err);
+            } else {
                  setHasCameraPermission(false);
-                 toast({
-                    variant: 'destructive',
-                    title: 'Camera Error',
-                    description: 'Could not access camera. Please check permissions.',
-                });
             }
-        };
+        } catch (err) {
+             console.error("Camera permission error:", err);
+             setHasCameraPermission(false);
+        }
+    };
 
-        startScanner();
-    }
-  }, [isScanning, hasCameraPermission]);
+    startScanner();
+
+    return () => {
+      cleanup();
+    };
+  }, [isClient]);
 
 
   const handleScanSuccess = async (decodedText: string, decodedResult: any) => {
-      if (isScanning) {
-        setIsScanning(false);
-        if (scannerRef.current && scannerRef.current.isScanning) {
-           scannerRef.current.stop().catch(err => console.error("Failed to stop scanner", err));
-        }
+      if (html5QrcodeRef.current?.isScanning) {
+        html5QrcodeRef.current.stop().catch(err => console.error("Failed to stop scanner", err));
         
         try {
             const studentRef = doc(db, 'students', decodedText);
@@ -164,7 +175,11 @@ export default function ScannerPage() {
   const resetScanner = () => {
     setScannedStudent(null);
     setSelectedCourse('');
-    setIsScanning(true);
+    // Re-start scanning logic is handled by useEffect re-running if we desire so
+    // For now, let's just refresh the component state. A full restart would need more state management.
+    // A simple approach is to just reload the page or guide user to do so.
+    // Or we re-trigger the useEffect. For now, we'll let user manually restart.
+    window.location.reload(); // Simple way to re-initiate scanner
   }
 
   return (
@@ -180,23 +195,26 @@ export default function ScannerPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div id={scannerContainerId} className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
-            {hasCameraPermission === false && (
+          <div className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
+             {!isClient && (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <p>Loading Scanner...</p>
+                 </div>
+             )}
+             {isClient && hasCameraPermission === false && (
                 <Alert variant="destructive" className="w-auto">
                     <CameraOff className="h-4 w-4" />
                     <AlertTitle>Camera Access Denied</AlertTitle>
                     <AlertDescription>
-                        Please enable camera permissions in your browser settings.
+                        Please enable camera permissions in your browser settings and refresh the page.
                     </AlertDescription>
                 </Alert>
             )}
-            {hasCameraPermission === null && (
-                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Initializing Camera...</p>
-                 </div>
-            )}
-            {!isScanning && scannedStudent && (
+             {isClient && hasCameraPermission && (
+                <div id={scannerContainerId} className="w-full h-full" />
+             )}
+             {scannedStudent && (
               <div className="absolute inset-0 bg-background flex flex-col items-center justify-center text-center p-4">
                  <Avatar className="h-24 w-24 mb-4">
                     <AvatarImage src={scannedStudent.photoURL} alt={scannedStudent.name} />
