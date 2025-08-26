@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, BookCopy, AlertCircle } from "lucide-react";
+import { Download, FileText, BookCopy, AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -20,6 +20,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getWatermarkedPdf } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 interface Document {
   id: string;
@@ -62,7 +64,9 @@ function DocumentsSkeleton() {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -108,10 +112,45 @@ export default function DocumentsPage() {
     switch (type) {
       case 'Syllabus':
         return BookCopy;
+      case 'Tutorial':
+        return FileText;
       default:
         return FileText;
     }
   }
+
+  const handleDownload = async (doc: Document) => {
+    if (!user) return;
+    
+    // Check if the document is a PDF
+    if (!doc.fileUrl.toLowerCase().endsWith('.pdf')) {
+        // For non-PDF files, perform a direct download
+        window.open(doc.fileUrl, '_blank');
+        return;
+    }
+
+    setDownloadingDocId(doc.id);
+    try {
+        const studentId = user.uid;
+        const watermarkedPdfBase64 = await getWatermarkedPdf(doc.fileUrl, studentId);
+        
+        const link = document.createElement('a');
+        link.href = `data:application/pdf;base64,${watermarkedPdfBase64}`;
+        link.download = `${doc.name}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "Could not process the document for download. Please try again."
+        })
+    } finally {
+        setDownloadingDocId(null);
+    }
+  };
 
   return (
     <>
@@ -148,6 +187,7 @@ export default function DocumentsPage() {
                   </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Course</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="hidden md:table-cell">Date</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -172,10 +212,18 @@ export default function DocumentsPage() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{doc.date}</TableCell>
                       <TableCell>
-                        <Button asChild aria-label="Download" size="icon" variant="outline">
-                           <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
+                        <Button 
+                            aria-label="Download" 
+                            size="icon" 
+                            variant="outline"
+                            onClick={() => handleDownload(doc)}
+                            disabled={downloadingDocId === doc.id}
+                        >
+                           {downloadingDocId === doc.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                           ) : (
+                                <Download className="h-4 w-4" />
+                           )}
                         </Button>
                       </TableCell>
                     </TableRow>
