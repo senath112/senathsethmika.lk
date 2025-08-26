@@ -21,13 +21,16 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function SignupPage() {
+  const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [olYear, setOlYear] = React.useState('');
+  const [town, setTown] = React.useState('');
 
   const handleEmailSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would typically handle the Firebase email/password sign-up
-    console.log('Signing up with:', email, password);
+    console.log('Signing up with:', { name, email, password, olYear, town });
     // For now, we'll just navigate to the dashboard on any submission
     window.location.href = '/dashboard';
   };
@@ -44,6 +47,17 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleEmailSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Your full name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -63,6 +77,28 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="olYear">O/L Year</Label>
+              <Input
+                id="olYear"
+                type="text"
+                placeholder="e.g., 2025"
+                required
+                value={olYear}
+                onChange={(e) => setOlYear(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="town">Nearest Town</Label>
+              <Input
+                id="town"
+                type="text"
+                placeholder="e.g., Colombo"
+                required
+                value={town}
+                onChange={(e) => setTown(e.target.value)}
               />
             </div>
             <Button type="submit" className="w-full h-12 text-base">
