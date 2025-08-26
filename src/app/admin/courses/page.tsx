@@ -41,6 +41,7 @@ import { Plus, Trash2 } from 'lucide-react';
 interface CourseVideo {
     url: string;
     description: string;
+    thumbnail: string;
 }
 
 interface Course {
@@ -55,8 +56,8 @@ interface Course {
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '' }]);
-  const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '' }]);
+  const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
+  const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -80,9 +81,9 @@ export default function AdminCoursesPage() {
   
   useEffect(() => {
     if (editingCourse) {
-      setVideos(editingCourse.youtubeVideos || [{ url: '', description: '' }]);
+      setVideos(editingCourse.youtubeVideos?.map(v => ({...v, thumbnail: v.thumbnail || ''})) || [{ url: '', description: '', thumbnail: '' }]);
     } else {
-      setVideos([{ url: '', description: '' }]);
+      setVideos([{ url: '', description: '', thumbnail: '' }]);
     }
   }, [editingCourse]);
 
@@ -104,7 +105,7 @@ export default function AdminCoursesPage() {
         description: 'Course added successfully.',
       });
       formRef.current?.reset();
-      setNewCourseVideos([{ url: '', description: '' }]);
+      setNewCourseVideos([{ url: '', description: '', thumbnail: '' }]);
     }
   };
 
@@ -139,15 +140,19 @@ export default function AdminCoursesPage() {
 
   const addVideoInput = (isNew: boolean) => {
     const setList = isNew ? setNewCourseVideos : setVideos;
-    setList(prev => [...prev, { url: '', description: '' }]);
+    setList(prev => [...prev, { url: '', description: '', thumbnail: '' }]);
   };
 
   const removeVideoInput = (index: number, isNew: boolean) => {
     const list = isNew ? newCourseVideos : videos;
     const setList = isNew ? setNewCourseVideos : setVideos;
-    if (list.length > 1) {
+    if (list.length > 1 || (list.length === 1 && (list[0].url || list[0].description || list[0].thumbnail))) {
       const updatedVideos = list.filter((_, i) => i !== index);
-      setList(updatedVideos);
+       if (updatedVideos.length === 0) {
+        setList([{ url: '', description: '', thumbnail: '' }]);
+      } else {
+        setList(updatedVideos);
+      }
     }
   };
 
@@ -184,25 +189,41 @@ export default function AdminCoursesPage() {
                     required
                   />
                 </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="image">Course Cover Image URL</Label>
+                  <Input
+                    id="image"
+                    name="image"
+                    placeholder="https://example.com/image.png"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>YouTube Videos</Label>
                   {newCourseVideos.map((video, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        name="youtubeUrl"
-                        value={video.url}
-                        onChange={(e) => handleVideoChange(index, 'url', e.target.value, true)}
-                        placeholder="YouTube URL"
-                      />
+                    <div key={index} className="space-y-2 p-2 border rounded-md">
+                       <div className="flex items-center gap-2">
+                          <Input
+                            name="youtubeUrl"
+                            value={video.url}
+                            onChange={(e) => handleVideoChange(index, 'url', e.target.value, true)}
+                            placeholder="YouTube URL"
+                          />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, true)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                       </div>
                       <Input
                         name="youtubeDescription"
                         value={video.description}
                         onChange={(e) => handleVideoChange(index, 'description', e.target.value, true)}
                         placeholder="Description (optional)"
                       />
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, true)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                       <Input
+                        name="youtubeThumbnail"
+                        value={video.thumbnail}
+                        onChange={(e) => handleVideoChange(index, 'thumbnail', e.target.value, true)}
+                        placeholder="Thumbnail URL (optional)"
+                      />
                     </div>
                   ))}
                   <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(true)}>
@@ -266,20 +287,27 @@ export default function AdminCoursesPage() {
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                 {videos.map((video, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Input
-                      value={video.url}
-                      onChange={(e) => handleVideoChange(index, 'url', e.target.value, false)}
-                      placeholder="YouTube URL"
-                    />
+                  <div key={index} className="space-y-2 p-2 border rounded-md">
+                     <div className="flex items-center gap-2">
+                        <Input
+                          value={video.url}
+                          onChange={(e) => handleVideoChange(index, 'url', e.target.value, false)}
+                          placeholder="YouTube URL"
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, false)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                     </div>
                     <Input
                       value={video.description}
                       onChange={(e) => handleVideoChange(index, 'description', e.target.value, false)}
                       placeholder="Description (optional)"
                     />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoInput(index, false)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                     <Input
+                      value={video.thumbnail}
+                      onChange={(e) => handleVideoChange(index, 'thumbnail', e.target.value, false)}
+                      placeholder="Thumbnail URL (optional)"
+                    />
                   </div>
                 ))}
                  <Button type="button" variant="outline" size="sm" onClick={() => addVideoInput(false)}>

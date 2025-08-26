@@ -12,11 +12,13 @@ import { Button } from '@/components/ui/button';
 import { checkAndIncrementViewCount, getVideoViewCount } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Ban, Youtube } from 'lucide-react';
+import { Ban, PlayCircle, Youtube } from 'lucide-react';
+import Image from 'next/image';
 
 interface CourseVideo {
   url: string;
   description: string;
+  thumbnail: string;
 }
 
 interface Course {
@@ -57,16 +59,12 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
 
       if (courseSnap.exists()) {
         const courseData = { id: courseSnap.id, ...courseSnap.data() } as Course;
-        // The field might still be youtubeUrls in old documents
-        if (!courseData.youtubeVideos && (courseData as any).youtubeUrls) {
-          courseData.youtubeVideos = ((courseData as any).youtubeUrls as string[]).map(url => ({ url, description: '' }));
-        } else if (!courseData.youtubeVideos) {
+        if (!courseData.youtubeVideos) {
           courseData.youtubeVideos = [];
         }
         
         setCourse(courseData);
         
-        // Fetch view counts for all videos in parallel
         const counts: Record<string, number> = {};
         for (const video of courseData.youtubeVideos) {
           const videoId = getYouTubeVideoId(video.url);
@@ -171,25 +169,39 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                         if (!videoId) return null;
                         const viewCount = videoViewCounts[videoId] || 0;
                         const limitReached = viewCount >= VIDEO_VIEW_LIMIT;
+                        const thumbnail = video.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 
                         return (
-                             <div key={index}>
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full justify-start text-left h-auto"
-                                    onClick={() => handleWatchVideo(video.url)}
-                                    disabled={limitReached}
-                                >
-                                    <Youtube className="mr-2 text-red-500" />
+                             <Card 
+                                key={index} 
+                                className={`overflow-hidden ${limitReached ? 'opacity-50' : 'cursor-pointer hover:shadow-md'}`}
+                                onClick={() => !limitReached && handleWatchVideo(video.url)}
+                             >
+                                <div className="flex items-center gap-4 p-2">
+                                     <div className="relative w-24 h-16 flex-shrink-0">
+                                        <Image src={thumbnail} alt={video.description || `Lecture Part ${index + 1}`} fill className="object-cover rounded-md" data-ai-hint="video thumbnail" />
+                                        {!limitReached && (
+                                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                                <PlayCircle className="h-6 w-6 text-white" />
+                                            </div>
+                                        )}
+                                        {limitReached && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                <Ban className="h-6 w-6 text-destructive" />
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex-1">
-                                        <p>Lecture Part {index + 1}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {video.description || `Views: ${viewCount} / ${VIDEO_VIEW_LIMIT}`}
+                                        <p className="font-semibold">Lecture Part {index + 1}</p>
+                                        <p className="text-xs text-muted-foreground truncate" title={video.description}>
+                                            {video.description || 'No description'}
+                                        </p>
+                                         <p className="text-xs text-muted-foreground">
+                                            Views: {viewCount} / {VIDEO_VIEW_LIMIT}
                                         </p>
                                     </div>
-                                    {limitReached && <Ban className="h-4 w-4 text-destructive" />}
-                                </Button>
-                             </div>
+                                </div>
+                             </Card>
                         );
                     }) : (
                          <Alert variant="default">
