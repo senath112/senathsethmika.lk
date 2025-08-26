@@ -19,13 +19,31 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreditCard, LogOut, User } from "lucide-react"
 import { useAuth } from '@/hooks/use-auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
 
 export function UserNav() {
   const { user } = useAuth();
+  const [studentName, setStudentName] = useState("Student Name");
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchStudentName() {
+      if (user) {
+        const docRef = doc(db, "students", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setStudentName(docSnap.data().name || user.displayName || "Student Name");
+        } else {
+          setStudentName(user.displayName || "Student Name");
+        }
+      }
+    }
+    fetchStudentName();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -38,14 +56,14 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="@student" data-ai-hint="person" />
-            <AvatarFallback>{user?.displayName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'S'}</AvatarFallback>
+            <AvatarFallback>{studentName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'S'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName || "Student Name"}</p>
+            <p className="text-sm font-medium leading-none">{studentName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email || "student@example.com"}
             </p>
@@ -53,13 +71,17 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
+          <DropdownMenuItem asChild>
+            <Link href="/billing">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Billing</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
