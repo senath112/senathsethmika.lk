@@ -17,6 +17,27 @@ import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as htmlToImage from 'html-to-image';
 
+function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl }: { user: any, studentName: string, studentOlYear: string, studentId: string, qrCodeUrl: string}) {
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md max-w-xs mx-auto">
+        <div className="text-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">{studentName}</h2>
+            <p className="text-gray-600 font-mono">{studentOlYear}{studentId}</p>
+        </div>
+        <div className="flex justify-center">
+            <Image
+                src={qrCodeUrl}
+                alt="QR Code"
+                width={150}
+                height={150}
+                className="rounded-md"
+                data-ai-hint="qr code"
+              />
+        </div>
+    </div>
+  )
+}
+
 function StudentIdCard() {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -25,6 +46,7 @@ function StudentIdCard() {
   const [studentOlYear, setStudentOlYear] = useState("");
   const [loading, setLoading] = useState(true);
   const idCardRef = useRef<HTMLDivElement>(null);
+  const minimalIdCardRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
 
@@ -75,11 +97,11 @@ function StudentIdCard() {
   };
 
   const handleDownloadImage = () => {
-    if (idCardRef.current === null) {
+    if (minimalIdCardRef.current === null) {
       return;
     }
 
-    htmlToImage.toPng(idCardRef.current, { cacheBust: true, pixelRatio: 2 })
+    htmlToImage.toPng(minimalIdCardRef.current, { cacheBust: true, pixelRatio: 2 })
       .then((dataUrl) => {
         const link = document.createElement('a');
         link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
@@ -111,8 +133,23 @@ function StudentIdCard() {
     );
   }
 
+  const studentId = user?.uid.substring(0, 5).toUpperCase() || 'XXXXX';
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`;
+
   return (
-    <Card className="overflow-hidden shadow-lg col-span-1 lg:col-span-2">
+    <>
+      <div style={{ position: 'fixed', left: '-9999px', top: '-9999px' }}>
+          <div ref={minimalIdCardRef}>
+            <MinimalIdCard 
+              user={user}
+              studentName={studentName}
+              studentOlYear={studentOlYear}
+              studentId={studentId}
+              qrCodeUrl={qrCodeUrl}
+            />
+          </div>
+      </div>
+      <Card className="overflow-hidden shadow-lg col-span-1 lg:col-span-2">
        <div ref={idCardRef} className="bg-card">
          <div className="bg-primary/10 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
           <Avatar className="h-24 w-24 border-4 border-white shadow-md">
@@ -142,13 +179,13 @@ function StudentIdCard() {
         <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-            <p className="font-semibold">{studentOlYear}{user?.uid.substring(0, 5).toUpperCase() || 'XXXXX'}</p>
+            <p className="font-semibold">{studentOlYear}{studentId}</p>
             <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
             <p className="font-semibold">12/2026</p>
           </div>
           <div className="flex justify-end">
             <Image
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`}
+              src={qrCodeUrl}
               alt="QR Code"
               width={100}
               height={100}
@@ -173,7 +210,8 @@ function StudentIdCard() {
               </Button>
             )}
         </div>
-    </Card>
+      </Card>
+    </>
   );
 }
 
