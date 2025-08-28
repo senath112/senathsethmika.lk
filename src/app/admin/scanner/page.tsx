@@ -91,31 +91,26 @@ export default function ScannerPage() {
         }
     }
 
-    const startScanner = async () => {
-        try {
-            const cameras = await Html5Qrcode.getCameras();
-            if (cameras && cameras.length) {
-                setHasCameraPermission(true);
-                const scanner = new Html5Qrcode(scannerContainerId);
-                html5QrcodeRef.current = scanner;
-
-                scanner.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: qrboxFunction },
-                    handleScanSuccess,
-                    (errorMessage) => { /* console.log("QR Scan Error:", errorMessage) */ }
-                ).catch(err => {
-                    console.error("Scanner start error:", err);
-                    setHasCameraPermission(false);
-                    toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not start the camera.'});
-                });
-            } else {
-                 setHasCameraPermission(false);
-            }
-        } catch (err) {
-             console.error("Camera permission error:", err);
-             setHasCameraPermission(false);
+    const startScanner = () => {
+        if (html5QrcodeRef.current) {
+            return;
         }
+
+        const scanner = new Html5Qrcode(scannerContainerId);
+        html5QrcodeRef.current = scanner;
+
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: qrboxFunction },
+            handleScanSuccess,
+            (errorMessage) => { /* console.log("QR Scan Error:", errorMessage) */ }
+        ).then(() => {
+            setHasCameraPermission(true);
+        }).catch(err => {
+            console.error("Scanner start error:", err);
+            setHasCameraPermission(false);
+            toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not start the camera. Please grant permission and refresh.'});
+        });
     };
 
     startScanner();
@@ -123,7 +118,7 @@ export default function ScannerPage() {
     return () => {
       cleanup();
     };
-  }, [isClient]);
+  }, [isClient, toast]);
 
 
   const handleScanSuccess = async (decodedText: string, decodedResult: any) => {
@@ -178,7 +173,6 @@ export default function ScannerPage() {
     // Re-start scanning logic is handled by useEffect re-running if we desire so
     // For now, let's just refresh the component state. A full restart would need more state management.
     // A simple approach is to just reload the page or guide user to do so.
-    // Or we re-trigger the useEffect. For now, we'll let user manually restart.
     window.location.reload(); // Simple way to re-initiate scanner
   }
 
