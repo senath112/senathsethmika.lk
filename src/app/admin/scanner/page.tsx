@@ -92,7 +92,7 @@ export default function ScannerPage() {
     }
 
     const startScanner = () => {
-        if (html5QrcodeRef.current) {
+        if (html5QrcodeRef.current || !document.getElementById(scannerContainerId)) {
             return;
         }
 
@@ -175,6 +175,33 @@ export default function ScannerPage() {
     // A simple approach is to just reload the page or guide user to do so.
     window.location.reload(); // Simple way to re-initiate scanner
   }
+  
+  const renderScannerState = () => {
+    if (!isClient) {
+        return (
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p>Loading Scanner...</p>
+            </div>
+        );
+    }
+
+    if (hasCameraPermission === false) {
+        return (
+            <Alert variant="destructive" className="w-auto">
+                <CameraOff className="h-4 w-4" />
+                <AlertTitle>Camera Access Denied</AlertTitle>
+                <AlertDescription>
+                    Please enable camera permissions in your browser settings and refresh the page.
+                </AlertDescription>
+            </Alert>
+        );
+    }
+    
+    // Default to loading/initial state until camera permission is confirmed
+    return <div id={scannerContainerId} className="w-full h-full" />;
+  }
+
 
   return (
     <>
@@ -190,24 +217,7 @@ export default function ScannerPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="w-full aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
-             {!isClient && (
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Loading Scanner...</p>
-                 </div>
-             )}
-             {isClient && hasCameraPermission === false && (
-                <Alert variant="destructive" className="w-auto">
-                    <CameraOff className="h-4 w-4" />
-                    <AlertTitle>Camera Access Denied</AlertTitle>
-                    <AlertDescription>
-                        Please enable camera permissions in your browser settings and refresh the page.
-                    </AlertDescription>
-                </Alert>
-            )}
-             {isClient && hasCameraPermission && (
-                <div id={scannerContainerId} className="w-full h-full" />
-             )}
+             {renderScannerState()}
              {scannedStudent && (
               <div className="absolute inset-0 bg-background flex flex-col items-center justify-center text-center p-4">
                  <Avatar className="h-24 w-24 mb-4">
