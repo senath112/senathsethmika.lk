@@ -102,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative flex flex-col min-h-screen">
 
       {/* Mobile Header - Floating Pill */}
        <header className="md:hidden fixed top-4 left-4 right-4 z-50 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
@@ -154,14 +154,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pt-24">
+      <main className="font-body antialiased flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pt-24">
         {children}
       </main>
 
-      <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-auto mx-auto">
-        <div className="bg-card/80 backdrop-blur-lg border rounded-full py-2 px-6 shadow-lg text-center">
-            <p className="font-bold">Senath Sethmika</p>
-            <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
+      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground border-t">
+        <p className="font-bold">Senath Sethmika</p>
+        <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
+         <div className="flex justify-center gap-4 mt-2 text-sm">
+            <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
+            <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
         </div>
       </footer>
     </div>
