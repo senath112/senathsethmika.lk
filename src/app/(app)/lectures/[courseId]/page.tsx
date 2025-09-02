@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,13 +12,32 @@ import { Button } from '@/components/ui/button';
 import { checkAndIncrementViewCount, getVideoViewCount } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Ban, PlayCircle, Youtube } from 'lucide-react';
+import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion } from 'lucide-react';
 import Image from 'next/image';
+import { getWatermarkedPdf } from '../../documents/actions';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface CourseVideo {
   url: string;
   description: string;
   thumbnail: string;
+}
+
+interface Document {
+  id: string;
+  name: string;
+  type: string;
+  date: string;
+  fileUrl: string;
+  courseId: string;
+  courseTitle: string;
+}
+
+interface Quiz {
+  id: string;
+  title: string;
+  questions: any[];
 }
 
 interface Course {
@@ -34,36 +53,37 @@ function getYouTubeVideoId(url: string) {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
-
-    if (match && match[2].length == 11) {
-        return match[2];
-    } else {
-        return null;
-    }
+    return (match && match[2].length == 11) ? match[2] : null;
 }
 
 export default function CourseVideosPage({ params }: { params: { courseId: string } }) {
   const [course, setCourse] = useState<Course | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [videoViewCounts, setVideoViewCounts] = useState<Record<string, number>>({});
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+      setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!user || !isClient) return;
+
     async function fetchCourse() {
-      if (!user) return;
       setLoading(true);
       const courseRef = doc(db, 'courses', params.courseId);
       const courseSnap = await getDoc(courseRef);
 
       if (courseSnap.exists()) {
         const courseData = { id: courseSnap.id, ...courseSnap.data() } as Course;
-        if (!courseData.youtubeVideos) {
-          courseData.youtubeVideos = [];
-        }
-        
+        courseData.youtubeVideos = courseData.youtubeVideos || [];
         setCourse(courseData);
         
         const counts: Record<string, number> = {};
@@ -81,7 +101,28 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
       setLoading(false);
     }
     fetchCourse();
-  }, [user, params.courseId]);
+    
+    // Fetch documents
+    const documentsQuery = query(collection(db, 'documents'), where('courseId', '==', params.courseId));
+    const unsubscribeDocs = onSnapshot(documentsQuery, (querySnapshot) => {
+        const docsData: Document[] = [];
+        querySnapshot.forEach((doc) => docsData.push({ id: doc.id, ...doc.data() } as Document));
+        setDocuments(docsData);
+    });
+
+    // Fetch quizzes
+    const quizzesQuery = query(collection(db, 'courses', params.courseId, 'quizzes'));
+    const unsubscribeQuizzes = onSnapshot(quizzesQuery, (snapshot) => {
+        const quizzesData: Quiz[] = [];
+        snapshot.forEach(doc => quizzesData.push({ id: doc.id, ...doc.data() } as Quiz));
+        setQuizzes(quizzesData);
+    });
+
+    return () => {
+        unsubscribeDocs();
+        unsubscribeQuizzes();
+    }
+  }, [user, params.courseId, isClient]);
 
   const handleWatchVideo = async (videoUrl: string) => {
       const videoId = getYouTubeVideoId(videoUrl);
@@ -108,7 +149,46 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
       }
   }
 
-  if (loading) {
+  const handleDownload = async (doc: Document) => {
+    if (!user) return;
+    
+    if (!doc.fileUrl.toLowerCase().endsWith('.pdf')) {
+        window.open(doc.fileUrl, '_blank');
+        return;
+    }
+
+    setDownloadingDocId(doc.id);
+    try {
+        const studentId = user.uid;
+        const watermarkedPdfBase64 = await getWatermarkedPdf(doc.fileUrl, studentId);
+        
+        const link = document.createElement('a');
+        link.href = `data:application/pdf;base64,${watermarkedPdfBase64}`;
+        link.download = `${doc.name}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "Could not process the document for download. Please try again."
+        })
+    } finally {
+        setDownloadingDocId(null);
+    }
+  };
+
+  const getDocIcon = (type: string) => {
+    switch (type) {
+      case 'Syllabus': return BookCopy;
+      case 'Tutorial': return FileText;
+      default: return FileText;
+    }
+  }
+
+  if (!isClient || loading) {
     return (
       <div>
         <Skeleton className="h-8 w-1/2 mb-4" />
@@ -121,7 +201,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
   }
 
   if (!course) {
@@ -130,10 +210,10 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
 
   return (
     <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Now Playing</CardTitle>
+                    <CardTitle>Now Playing: {course.title}</CardTitle>
                     <CardDescription>
                         {selectedVideo ? `Video from ${course.title}` : 'Select a video to start watching.'}
                     </CardDescription>
@@ -156,13 +236,83 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                     </AspectRatio>
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Course Documents</CardTitle>
+                    <CardDescription>Syllabi, notes, and other materials.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {documents.length > 0 ? (
+                        <div className="space-y-2">
+                        {documents.map((doc) => {
+                            const Icon = getDocIcon(doc.type);
+                            return (
+                            <div key={doc.id} className="flex items-center justify-between p-2 border rounded-md">
+                                <div className="flex items-center gap-2">
+                                <Icon className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <p className="font-medium">{doc.name}</p>
+                                    <p className="text-xs text-muted-foreground">{doc.date}</p>
+                                </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                <Badge variant={doc.type === 'Syllabus' ? 'default' : 'secondary'}>{doc.type}</Badge>
+                                <Button size="icon" variant="outline" onClick={() => handleDownload(doc)} disabled={downloadingDocId === doc.id}>
+                                    {downloadingDocId === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                </Button>
+                                </div>
+                            </div>
+                            )
+                        })}
+                        </div>
+                    ) : (
+                         <Alert variant="default">
+                            <AlertTitle>No Documents Available</AlertTitle>
+                            <AlertDescription>
+                                There are no documents for this course yet.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Quizzes</CardTitle>
+                    <CardDescription>Test your knowledge.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {quizzes.length > 0 ? (
+                        <div className="space-y-2">
+                            {quizzes.map(quiz => (
+                                <div key={quiz.id} className="flex items-center justify-between p-2 border rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <FileQuestion className="h-5 w-5 text-muted-foreground" />
+                                        <p className="font-medium">{quiz.title}</p>
+                                    </div>
+                                    <Button asChild>
+                                        <Link href={`/courses/${params.courseId}/quiz/${quiz.id}`}>Start Quiz</Link>
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Alert variant="default">
+                            <AlertTitle>No Quizzes Available</AlertTitle>
+                            <AlertDescription>
+                                There are no quizzes for this course yet.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
         </div>
 
         <div className="lg:col-span-1">
             <Card>
                 <CardHeader>
-                    <CardTitle>{course.title}</CardTitle>
-                    <CardDescription>Available Videos</CardDescription>
+                    <CardTitle>Available Videos</CardTitle>
+                    <CardDescription>Select a video to play</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {course.youtubeVideos.length > 0 ? course.youtubeVideos.map((video, index) => {

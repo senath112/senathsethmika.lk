@@ -31,18 +31,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { addCourse, updateCourseVideos, addCourseDocument } from './actions';
+import { addCourse, updateCourseVideos, addCourseDocument, addQuiz } from './actions';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Plus, Trash2, Upload, Loader2, Pencil, Link as LinkIcon } from 'lucide-react';
+import { Plus, Trash2, Upload, Loader2, Pencil, Link as LinkIcon, FileQuestion } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { FcGoogle } from "react-icons/fc";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 interface CourseVideo {
@@ -59,6 +60,18 @@ interface Document {
     date: string;
 }
 
+interface QuizQuestion {
+    question: string;
+    options: string[];
+    correctAnswer: string;
+}
+
+interface Quiz {
+    id: string;
+    title: string;
+    questions: QuizQuestion[];
+}
+
 interface Course {
   id: string;
   title: string;
@@ -67,6 +80,7 @@ interface Course {
   aiHint: string;
   youtubeVideos?: CourseVideo[];
   documents?: Document[];
+  quizzes?: Quiz[];
 }
 
 interface DocumentUpload {
@@ -84,9 +98,13 @@ export default function AdminCoursesPage() {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [courseDocuments, setCourseDocuments] = useState<Document[]>([]);
+  const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
   
   const [videos, setVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
   const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
+
+  const [quizTitle, setQuizTitle] = useState('');
+  const [questions, setQuestions] = useState<QuizQuestion[]>([{ question: '', options: ['', ''], correctAnswer: '' }]);
   
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -111,17 +129,29 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     if (editingCourse) {
       setVideos(editingCourse.youtubeVideos?.map(v => ({...v, thumbnail: v.thumbnail || ''})) || [{ url: '', description: '', thumbnail: '' }]);
-      // Fetch documents for the editing course
+      
       const docQuery = query(collection(db, 'documents'), where('courseId', '==', editingCourse.id));
       const unsubscribeDocs = onSnapshot(docQuery, (snapshot) => {
         const docs: Document[] = [];
         snapshot.forEach(doc => docs.push({ id: doc.id, ...doc.data() } as Document));
         setCourseDocuments(docs);
       });
-      return () => unsubscribeDocs();
+
+      const quizQuery = query(collection(db, 'courses', editingCourse.id, 'quizzes'));
+      const unsubscribeQuizzes = onSnapshot(quizQuery, snapshot => {
+        const quizzes: Quiz[] = [];
+        snapshot.forEach(doc => quizzes.push({ id: doc.id, ...doc.data() } as Quiz));
+        setCourseQuizzes(quizzes);
+      });
+
+      return () => {
+          unsubscribeDocs();
+          unsubscribeQuizzes();
+      }
     } else {
       setVideos([{ url: '', description: '', thumbnail: '' }]);
       setCourseDocuments([]);
+      setCourseQuizzes([]);
     }
   }, [editingCourse]);
 
@@ -248,6 +278,71 @@ export default function AdminCoursesPage() {
         setList(updatedVideos);
       }
     }
+  };
+
+  const handleQuestionChange = (qIndex: number, value: string) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].question = value;
+    setQuestions(newQuestions);
+  };
+
+  const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options[oIndex] = value;
+    setQuestions(newQuestions);
+  };
+
+  const handleCorrectAnswerChange = (qIndex: number, value: string) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].correctAnswer = value;
+    setQuestions(newQuestions);
+  };
+  
+  const addQuestion = () => {
+    setQuestions([...questions, { question: '', options: ['', ''], correctAnswer: '' }]);
+  };
+
+  const removeQuestion = (qIndex: number) => {
+      if (questions.length > 1) {
+        setQuestions(questions.filter((_, index) => index !== qIndex));
+      }
+  };
+
+  const addOption = (qIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].options.push('');
+    setQuestions(newQuestions);
+  };
+
+  const removeOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...questions];
+    if (newQuestions[qIndex].options.length > 2) {
+      newQuestions[qIndex].options.splice(oIndex, 1);
+      setQuestions(newQuestions);
+    }
+  };
+
+  const handleAddQuiz = async () => {
+      if (!editingCourse) return;
+      
+      const quizData = { title: quizTitle, questions };
+      const result = await addQuiz(editingCourse.id, quizData);
+      
+      if (result.errors) {
+          const errorMessages = Object.values(result.errors).flat().join(', ');
+          toast({
+              variant: 'destructive',
+              title: 'Error adding quiz',
+              description: errorMessages || 'An unknown error occurred.',
+          });
+      } else {
+          toast({
+              title: 'Success',
+              description: 'Quiz added successfully.'
+          });
+          setQuizTitle('');
+          setQuestions([{ question: '', options: ['', ''], correctAnswer: '' }]);
+      }
   };
 
 
@@ -381,13 +476,14 @@ export default function AdminCoursesPage() {
             <DialogHeader>
                 <DialogTitle>Edit Course: {editingCourse?.title}</DialogTitle>
                 <DialogDescription>
-                    Manage videos and documents for this course.
+                    Manage videos, documents, and quizzes for this course.
                 </DialogDescription>
             </DialogHeader>
             <Tabs defaultValue="videos" className="w-full">
                 <TabsList>
                     <TabsTrigger value="videos">Videos</TabsTrigger>
                     <TabsTrigger value="documents">Documents</TabsTrigger>
+                    <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
                 </TabsList>
                 <TabsContent value="videos">
                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-4 py-4">
@@ -561,11 +657,65 @@ export default function AdminCoursesPage() {
                         </DialogClose>
                      </DialogFooter>
                 </TabsContent>
+                 <TabsContent value="quizzes">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                        <div className="space-y-4">
+                             <h3 className="font-semibold">Add New Quiz</h3>
+                             <div className="space-y-2">
+                                <Label htmlFor="quiz-title">Quiz Title</Label>
+                                <Input id="quiz-title" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. Chapter 1 Review" />
+                             </div>
+                             <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                                {questions.map((q, qIndex) => (
+                                    <div key={qIndex} className="p-4 border rounded-md space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <Label>Question {qIndex + 1}</Label>
+                                            <Button variant="ghost" size="icon" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>
+                                        </div>
+                                        <Textarea value={q.question} onChange={e => handleQuestionChange(qIndex, e.target.value)} placeholder="Type the question" />
+                                        
+                                        <Label>Options</Label>
+                                        <RadioGroup value={q.correctAnswer} onValueChange={value => handleCorrectAnswerChange(qIndex, value)}>
+                                            {q.options.map((opt, oIndex) => (
+                                                <div key={oIndex} className="flex items-center gap-2">
+                                                    <RadioGroupItem value={opt} id={`q${qIndex}o${oIndex}`} />
+                                                    <Input value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} />
+                                                    <Button variant="ghost" size="icon" onClick={() => removeOption(qIndex, oIndex)}><Trash2 className="h-4 w-4" /></Button>
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                        <Button variant="outline" size="sm" onClick={() => addOption(qIndex)}>Add Option</Button>
+                                    </div>
+                                ))}
+                             </div>
+                             <Button variant="outline" onClick={addQuestion}>Add Question</Button>
+                             <DialogFooter className="pt-4 border-t">
+                                <Button onClick={handleAddQuiz}>Save Quiz</Button>
+                             </DialogFooter>
+                        </div>
+                        <div className="space-y-4">
+                             <h3 className="font-semibold">Existing Quizzes</h3>
+                             <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
+                                {courseQuizzes.length > 0 ? (
+                                    courseQuizzes.map(quiz => (
+                                        <div key={quiz.id} className="flex justify-between items-center p-2 border rounded-md">
+                                            <div className="flex items-center gap-2">
+                                                <FileQuestion className="h-5 w-5 text-muted-foreground" />
+                                                <p className="text-sm font-medium">{quiz.title}</p>
+                                            </div>
+                                            <Badge variant="secondary">{quiz.questions.length} questions</Badge>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">No quizzes created for this course yet.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                 </TabsContent>
             </Tabs>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-
-    

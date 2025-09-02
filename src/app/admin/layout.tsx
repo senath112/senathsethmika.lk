@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   Cpu,
   QrCode,
+  FileQuestion
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";

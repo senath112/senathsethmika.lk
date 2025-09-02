@@ -29,6 +29,18 @@ const documentSchema = z.object({
     fileUrl: z.string().url({ message: 'Please enter a valid file URL.' }),
 });
 
+const quizQuestionSchema = z.object({
+    question: z.string().min(1, 'Question cannot be empty.'),
+    options: z.array(z.string().min(1, 'Option cannot be empty.')).min(2, 'Must have at least two options.'),
+    correctAnswer: z.string().min(1, 'A correct answer must be selected.')
+});
+
+const quizSchema = z.object({
+    title: z.string().min(3, 'Quiz title must be at least 3 characters.'),
+    questions: z.array(quizQuestionSchema).min(1, 'A quiz must have at least one question.')
+});
+
+
 export async function addCourse(prevState: any, formData: FormData) {
   const videoUrls = formData.getAll('youtubeUrl');
   const videoDescriptions = formData.getAll('youtubeDescription');
@@ -134,4 +146,22 @@ export async function addCourseDocument(courseId: string, courseTitle: string, d
     }
 }
 
-    
+export async function addQuiz(courseId: string, quizData: any) {
+    const validatedFields = quizSchema.safeParse(quizData);
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+        };
+    }
+
+    try {
+        await addDoc(collection(db, 'courses', courseId, 'quizzes'), validatedFields.data);
+        return { message: 'Quiz added successfully.' };
+    } catch (error) {
+        console.error("Error adding quiz: ", error);
+        return {
+             errors: { firestore: ['Failed to add quiz to database.'] }
+        }
+    }
+}
