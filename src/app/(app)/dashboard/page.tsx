@@ -278,8 +278,14 @@ function StudentIdCard() {
        <div className="p-4 sm:p-6 border-t flex items-center justify-end gap-2">
             {!location && (
                 <Button size="sm" variant="outline" onClick={handleFetchLocation} disabled={isLocating}>
-                    {isLocating ? <Loader2 className="mr-2 animate-spin" /> : <MapPin className="mr-2" />}
+                    {isLocating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
                     Update Location
+                </Button>
+            )}
+             {!mobileNumber && !isEditing && (
+                <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                    <Phone className="mr-2 h-4 w-4" />
+                    Update Phone
                 </Button>
             )}
             <Button size="icon" variant="outline" onClick={handleDownloadClick}>
@@ -291,9 +297,11 @@ function StudentIdCard() {
                 <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X /></Button>
               </>
             ) : (
+             mobileNumber && (
               <Button size="icon" variant="outline" onClick={() => setIsEditing(true)}>
                 <Edit />
               </Button>
+             )
             )}
         </div>
       </Card>
