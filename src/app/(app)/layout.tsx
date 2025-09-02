@@ -12,6 +12,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Menu,
+  Bell,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/courses', label: 'Courses', icon: GraduationCap, color: 'text-emerald-500' },
   { href: '/documents', label: 'Documents', icon: FileText, color: 'text-amber-500' },
   { href: '/billing', label: 'Billing', icon: CreditCard, color: 'text-violet-500' },
+  { href: '/notices', label: 'Notices', icon: Bell, color: 'text-rose-500' },
 ];
 
 function SidebarNav() {
