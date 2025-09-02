@@ -17,6 +17,7 @@ import {
   QrCode,
   FileQuestion,
   Megaphone,
+  FileText,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+  { href: '/admin/documents', label: 'Documents', icon: FileText },
   { href: '/admin/enrollments', label: 'Enrollments', icon: ClipboardCheck },
   { href: '/admin/notices', label: 'Notices', icon: Megaphone },
   { href: '/admin/scanner', label: 'Scanner', icon: QrCode },
