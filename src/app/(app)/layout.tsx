@@ -12,7 +12,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   Menu,
-  PlayCircle,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -24,7 +23,6 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-sky-500' },
-  { href: '/lectures', label: 'Lectures', icon: PlayCircle, color: 'text-red-500' },
   { href: '/courses', label: 'Courses', icon: GraduationCap, color: 'text-emerald-500' },
   { href: '/documents', label: 'Documents', icon: FileText, color: 'text-amber-500' },
   { href: '/billing', label: 'Billing', icon: CreditCard, color: 'text-violet-500' },
@@ -81,14 +79,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
-    if (!loading && !user && !pathname.startsWith('/admin')) {
+    setIsClient(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isClient && !loading && !user && !pathname.startsWith('/admin')) {
       router.push('/login');
     }
-  }, [user, loading, router, pathname]);
+  }, [user, loading, router, pathname, isClient]);
 
-  if (loading) {
+  if (!isClient || loading) {
     return <AppLayoutSkeleton />;
   }
   
