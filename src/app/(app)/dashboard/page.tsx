@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X } from "lucide-react";
+import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState, useRef } from "react";
@@ -17,6 +17,11 @@ import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as htmlToImage from 'html-to-image';
 import { format } from "date-fns";
+
+interface Location {
+    latitude: number;
+    longitude: number;
+}
 
 function MinimalIdCard({ user, studentName, studentOlYear, studentId, qrCodeUrl, generatedAt }: { user: any, studentName: string, studentOlYear: string, studentId: string, qrCodeUrl: string, generatedAt: string | null}) {
   return (
@@ -49,6 +54,8 @@ function StudentIdCard() {
   const [studentName, setStudentName] = useState("");
   const [studentMajor, setStudentMajor] = useState("");
   const [studentOlYear, setStudentOlYear] = useState("");
+  const [location, setLocation] = useState<Location | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [downloadTrigger, setDownloadTrigger] = useState(0);
@@ -71,6 +78,7 @@ function StudentIdCard() {
           setStudentName(data.name || user.displayName || "Student Name");
           setStudentMajor(data.major || "Not specified");
           setStudentOlYear(data.olYear || "");
+          setLocation(data.location || null);
         } else {
            setStudentName(user.displayName || "Student Name");
            setStudentMajor("Not specified");
@@ -129,6 +137,7 @@ function StudentIdCard() {
         id: user.uid,
         name: studentName,
         major: studentMajor,
+        location: location || undefined,
       });
       setIsEditing(false);
       toast({
@@ -147,6 +156,30 @@ function StudentIdCard() {
   const handleDownloadClick = () => {
     setDownloadTrigger(prev => prev + 1);
   }
+
+  const handleFetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Geolocation is not supported by your browser.' });
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        setLocation(newLocation);
+        setIsLocating(false);
+        toast({ title: 'Success', description: 'Location fetched successfully! Click save to store it.' });
+      },
+      () => {
+        setIsLocating(false);
+        toast({ variant: 'destructive', title: 'Error', description: 'Unable to retrieve your location. Please grant permission.' });
+      }
+    );
+  };
 
   if (loading) {
     return (
@@ -206,12 +239,20 @@ function StudentIdCard() {
             )}
           </div>
         </div>
-        <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-center">
+        <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-start">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Student ID</p>
             <p className="font-semibold">{studentOlYear}{studentId}</p>
             <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
             <p className="font-semibold">12/2026</p>
+             <p className="text-sm font-medium text-muted-foreground mt-4">Location</p>
+             {location ? (
+                <p className="font-semibold text-xs">
+                    Lat: {location.latitude.toFixed(4)}, Lon: {location.longitude.toFixed(4)}
+                </p>
+            ) : (
+                 <p className="font-semibold text-xs text-muted-foreground">Not set</p>
+            )}
           </div>
           <div className="flex justify-end">
             <Image
@@ -226,7 +267,11 @@ function StudentIdCard() {
         </CardContent>
        </div>
        <div className="p-4 sm:p-6 border-t flex items-center justify-end gap-2">
-           <Button size="icon" variant="outline" onClick={handleDownloadClick}>
+            <Button size="sm" variant="outline" onClick={handleFetchLocation} disabled={isLocating}>
+                {isLocating ? <Loader2 className="mr-2 animate-spin" /> : <MapPin className="mr-2" />}
+                Update Location
+            </Button>
+            <Button size="icon" variant="outline" onClick={handleDownloadClick}>
               <Download />
             </Button>
             {isEditing ? (
