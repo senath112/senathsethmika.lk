@@ -16,6 +16,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Download, Loader2 } from "lucide-react";
+import { generatePaymentPdf } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: string;
@@ -51,7 +55,9 @@ function BillingSkeleton() {
 export default function BillingPage() {
   const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -70,6 +76,31 @@ export default function BillingPage() {
 
     return () => unsubscribe();
   }, [user]);
+
+  const handleDownload = async (payment: Payment) => {
+    if (!user) return;
+    setDownloadingId(payment.id);
+    try {
+        const pdfBase64 = await generatePaymentPdf({
+            ...payment,
+            studentName: user.displayName || 'N/A'
+        });
+        const link = document.createElement('a');
+        link.href = `data:application/pdf;base64,${pdfBase64}`;
+        link.download = `receipt-${payment.invoice}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Download Failed',
+            description: 'Could not generate the payment slip.'
+        });
+    } finally {
+        setDownloadingId(null);
+    }
+  }
 
   return (
     <>
@@ -95,12 +126,13 @@ export default function BillingPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead><span className="sr-only">Download</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paymentHistory.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center">No payment history found.</TableCell>
+                        <TableCell colSpan={6} className="text-center">No payment history found.</TableCell>
                     </TableRow>
                 )}
                 {paymentHistory.map((payment) => (
@@ -115,6 +147,19 @@ export default function BillingPage() {
                         className={payment.status === 'Paid' ? 'bg-green-100 text-green-800' : ''}>
                           {payment.status}
                       </Badge>
+                    </TableCell>
+                     <TableCell>
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => handleDownload(payment)}
+                            disabled={downloadingId === payment.id}>
+                                {downloadingId === payment.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Download className="h-4 w-4" />
+                                )}
+                        </Button>
                     </TableCell>
                   </TableRow>
                 ))}
