@@ -98,11 +98,15 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
       <CardContent>
         <div className="space-y-4">
             <p className="font-semibold text-lg">{currentQuestion.question}</p>
-            <RadioGroup onValueChange={handleAnswerSelect} value={selectedAnswers[currentQuestionIndex]}>
+            <RadioGroup 
+                key={currentQuestionIndex}
+                onValueChange={handleAnswerSelect} 
+                value={selectedAnswers[currentQuestionIndex]}
+            >
                 {currentQuestion.options.map((option, index) => (
                      <div key={index} className="flex items-center space-x-2 p-2 rounded-md border">
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">{option}</Label>
+                        <RadioGroupItem value={option} id={`q${currentQuestionIndex}-option-${index}`} />
+                        <Label htmlFor={`q${currentQuestionIndex}-option-${index}`} className="flex-1 cursor-pointer">{option}</Label>
                     </div>
                 ))}
             </RadioGroup>
