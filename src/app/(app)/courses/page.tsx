@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { requestEnrollment } from "./actions";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface Course {
   id: string;
@@ -69,7 +71,11 @@ export default function CoursesPage() {
       const statuses: Record<string, EnrollmentStatus> = {};
       querySnapshot.forEach(doc => {
         const data = doc.data();
-        statuses[data.courseId] = data.status;
+        if (data.status === 'approved') {
+             statuses[data.courseId] = 'enrolled';
+        } else {
+             statuses[data.courseId] = data.status;
+        }
       });
       setEnrollmentStatus(statuses);
     }
@@ -118,15 +124,21 @@ export default function CoursesPage() {
                 </CardHeader>
                 <CardContent className="flex-grow" />
                 <CardFooter>
-                   <Button 
-                    className="w-full" 
-                    onClick={() => handleEnroll(course.id)}
-                    disabled={status !== 'none'}
-                  >
-                    {status === 'pending' && 'Request Sent'}
-                    {status === 'approved' && 'Enrolled'}
-                    {status === 'none' && 'Enroll Now'}
-                  </Button>
+                    {status === 'enrolled' ? (
+                        <Button className="w-full" asChild>
+                            <Link href={`/lectures/${course.id}`}>
+                                Open Course <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button 
+                            className="w-full" 
+                            onClick={() => handleEnroll(course.id)}
+                            disabled={status === 'pending'}
+                        >
+                            {status === 'pending' ? 'Request Sent' : 'Enroll Now'}
+                        </Button>
+                    )}
                 </CardFooter>
               </Card>
             )
