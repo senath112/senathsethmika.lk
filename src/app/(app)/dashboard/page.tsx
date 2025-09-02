@@ -276,10 +276,12 @@ function StudentIdCard() {
         </CardContent>
        </div>
        <div className="p-4 sm:p-6 border-t flex items-center justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={handleFetchLocation} disabled={isLocating}>
-                {isLocating ? <Loader2 className="mr-2 animate-spin" /> : <MapPin className="mr-2" />}
-                Update Location
-            </Button>
+            {!location && (
+                <Button size="sm" variant="outline" onClick={handleFetchLocation} disabled={isLocating}>
+                    {isLocating ? <Loader2 className="mr-2 animate-spin" /> : <MapPin className="mr-2" />}
+                    Update Location
+                </Button>
+            )}
             <Button size="icon" variant="outline" onClick={handleDownloadClick}>
               <Download />
             </Button>
