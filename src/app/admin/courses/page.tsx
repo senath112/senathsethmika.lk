@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -40,6 +41,9 @@ import { Plus, Trash2, Upload, Loader2, Pencil, Link as LinkIcon } from 'lucide-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { FcGoogle } from "react-icons/fc";
+
 
 interface CourseVideo {
     url: string;
@@ -163,7 +167,7 @@ export default function AdminCoursesPage() {
      }
   };
 
-  const handleAddDocument = async (uploadType: 'file' | 'url') => {
+  const handleAddDocument = async (uploadType: 'file' | 'url' | 'google-drive') => {
     if (!editingCourse || !document.name) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please provide a document name.' });
       return;
@@ -182,7 +186,7 @@ export default function AdminCoursesPage() {
             const storageRef = ref(storage, `course_documents/${editingCourse.id}/${documentFile.name}`);
             const uploadResult = await uploadBytes(storageRef, documentFile);
             finalFileUrl = await getDownloadURL(uploadResult.ref);
-        } else { // url
+        } else { // url or google-drive
             if (!documentUrl) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Please provide a document URL.' });
                 setIsUploading(false);
@@ -425,9 +429,10 @@ export default function AdminCoursesPage() {
                         <div className="space-y-4">
                             <h3 className="font-semibold">Add New Document</h3>
                             <Tabs defaultValue="upload" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
+                                <TabsList className="grid w-full grid-cols-3">
                                     <TabsTrigger value="upload">Upload File</TabsTrigger>
                                     <TabsTrigger value="url">From URL</TabsTrigger>
+                                    <TabsTrigger value="google-drive">Google Drive</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="upload" className="space-y-4 pt-4">
                                      <div className="space-y-2">
@@ -498,6 +503,38 @@ export default function AdminCoursesPage() {
                                           Add from URL
                                         </Button>
                                 </TabsContent>
+                                 <TabsContent value="google-drive" className="space-y-4 pt-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="doc-name-gdrive">Document Name</Label>
+                                        <Input id="doc-name-gdrive" value={document.name} onChange={(e) => setDocument(d => ({ ...d, name: e.target.value }))} placeholder="e.g. Midterm Study Guide" />
+                                      </div>
+                                       <div className="space-y-2">
+                                        <Label htmlFor="doc-type-gdrive">Document Type</Label>
+                                        <Select value={document.type} onValueChange={(value) => setDocument(d => ({ ...d, type: value }))}>
+                                          <SelectTrigger id="doc-type-gdrive">
+                                            <SelectValue placeholder="Select a type" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Notes">Notes</SelectItem>
+                                            <SelectItem value="Syllabus">Syllabus</SelectItem>
+                                            <SelectItem value="Tutorial">Tutorial</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="doc-gdrive-url">Google Drive Share URL</Label>
+                                        <Input id="doc-gdrive-url" type="url" placeholder="Paste Google Drive share link here" value={documentUrl} onChange={(e) => setDocumentUrl(e.target.value)} />
+                                      </div>
+                                       <Button onClick={() => handleAddDocument('google-drive')} disabled={isUploading}>
+                                         {isUploading ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <FcGoogle className="mr-2 h-4 w-4" />
+                                          )}
+                                          Add from Google Drive
+                                        </Button>
+                                </TabsContent>
                             </Tabs>
                         </div>
 
@@ -530,3 +567,5 @@ export default function AdminCoursesPage() {
     </>
   );
 }
+
+    

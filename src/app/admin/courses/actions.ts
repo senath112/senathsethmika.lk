@@ -96,7 +96,21 @@ export async function updateCourseVideos(courseId: string, videos: { url: string
 }
 
 export async function addCourseDocument(courseId: string, courseTitle: string, document: { name: string; type: string; fileUrl: string; }) {
-    const validatedFields = documentSchema.safeParse(document);
+    
+    let fileUrl = document.fileUrl;
+    // If it's a google drive link, transform it for direct download
+    if (fileUrl.includes('drive.google.com')) {
+        const parts = fileUrl.split('/');
+        const fileId = parts[parts.indexOf('d') + 1];
+        if(fileId) {
+             fileUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        }
+    }
+
+    const validatedFields = documentSchema.safeParse({
+        ...document,
+        fileUrl,
+    });
 
     if (!validatedFields.success) {
         return {
@@ -119,3 +133,5 @@ export async function addCourseDocument(courseId: string, courseTitle: string, d
         }
     }
 }
+
+    
