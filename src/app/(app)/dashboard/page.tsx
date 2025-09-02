@@ -108,7 +108,13 @@ function StudentIdCard() {
         // Allow state to update before capturing
         await new Promise(resolve => setTimeout(resolve, 50));
         
-        htmlToImage.toPng(minimalIdCardRef.current!, { cacheBust: true, pixelRatio: 2 })
+        htmlToImage.toPng(minimalIdCardRef.current!, { 
+            cacheBust: true, 
+            pixelRatio: 2,
+            fetchRequestInit: { 
+                mode: 'cors'
+            }
+        })
             .then((dataUrl) => {
             const link = document.createElement('a');
             link.download = `student-id-card-${user?.uid.substring(0,5)}.png`;
