@@ -232,8 +232,8 @@ function StudentIdCard() {
                   <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} className="text-2xl font-bold p-0 border-none shadow-none focus-visible:ring-0" />
                 </div>
                 <div>
-                  <Label htmlFor="studentMajor" className="sr-only">Major</Label>
-                  <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" placeholder="Your Major (e.g. Science)" />
+                  <Label htmlFor="studentOlYear" className="sr-only">O/L Batch</Label>
+                  <Input id="studentOlYear" value={studentOlYear} onChange={(e) => setStudentOlYear(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" placeholder="Your O/L Batch (e.g. 2025)" />
                 </div>
                 <div>
                    <Label htmlFor="mobileNumber" className="sr-only">Mobile Number</Label>
@@ -243,7 +243,7 @@ function StudentIdCard() {
             ) : (
               <div>
                 <CardTitle className="text-2xl">{studentName}</CardTitle>
-                {studentMajor && <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>}
+                {studentOlYear && <CardDescription className="text-primary font-medium">O/L Batch: {studentOlYear}</CardDescription>}
                 {mobileNumber && <p className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" />{mobileNumber}</p>}
               </div>
             )}
