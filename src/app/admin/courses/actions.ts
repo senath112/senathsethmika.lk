@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
@@ -71,7 +71,8 @@ export async function addCourse(prevState: any, formData: FormData) {
       description: validatedFields.data.description,
       youtubeVideos: validatedFields.data.youtubeVideos || [],
       image: validatedFields.data.image || `https://picsum.photos/600/400`,
-      aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`
+      aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`,
+      createdAt: serverTimestamp(),
     });
     return { message: 'Course added successfully.' };
   } catch (error) {

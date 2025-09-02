@@ -13,6 +13,7 @@ import { requestEnrollment } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { subDays } from "date-fns";
 
 interface Course {
   id: string;
@@ -20,6 +21,7 @@ interface Course {
   description: string;
   image: string;
   aiHint: string;
+  createdAt: any;
 }
 
 type EnrollmentStatus = 'enrolled' | 'pending' | 'none';
@@ -53,8 +55,16 @@ export default function CoursesPage() {
     const q = query(collection(db, 'courses'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const coursesData: Course[] = [];
+      const cutoffDate = subDays(new Date(), 45);
+
       querySnapshot.forEach((doc) => {
-        coursesData.push({ id: doc.id, ...(doc.data() as Omit<Course, 'id'>) });
+        const course = { id: doc.id, ...(doc.data() as Omit<Course, 'id'>) };
+        if (course.createdAt && course.createdAt.toDate() > cutoffDate) {
+          coursesData.push(course);
+        } else if (!course.createdAt) {
+          // Fallback for courses without a creation date for backward compatibility
+          coursesData.push(course);
+        }
       });
       setCourses(coursesData);
       setLoading(false);
