@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -56,11 +56,23 @@ export default function BillingPage() {
   const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [studentName, setStudentName] = useState('N/A');
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
+    
+    async function fetchStudentName() {
+        const studentDocRef = doc(db, 'students', user.uid);
+        const studentDocSnap = await getDoc(studentDocRef);
+        if (studentDocSnap.exists()) {
+            setStudentName(studentDocSnap.data().name || 'N/A');
+        } else {
+            setStudentName(user.displayName || 'N/A');
+        }
+    }
+    fetchStudentName();
     
     setLoading(true);
     const q = query(collection(db, 'payments'), where('studentId', '==', user.uid));
@@ -83,7 +95,7 @@ export default function BillingPage() {
     try {
         const pdfBase64 = await generatePaymentPdf({
             ...payment,
-            studentName: user.displayName || 'N/A'
+            studentName: studentName
         });
         const link = document.createElement('a');
         link.href = `data:application/pdf;base64,${pdfBase64}`;
