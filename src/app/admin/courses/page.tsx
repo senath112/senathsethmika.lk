@@ -27,11 +27,22 @@ import {
     DialogTitle,
     DialogClose
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { addCourse, updateCourseVideos, addCourseDocument, addQuiz } from './actions';
+import { addCourse, updateCourseVideos, addCourseDocument, addQuiz, deleteCourse } from './actions';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import React, { useEffect, useState, useRef } from 'react';
@@ -345,6 +356,22 @@ export default function AdminCoursesPage() {
       }
   };
 
+  const handleDeleteCourse = async (courseId: string) => {
+    const result = await deleteCourse(courseId);
+    if (result?.errors) {
+      toast({
+        variant: 'destructive',
+        title: 'Error deleting course',
+        description: Object.values(result.errors).flat().join(', ') || 'An unknown error occurred.',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Course deleted successfully.',
+      });
+    }
+  };
+
 
   return (
     <>
@@ -460,6 +487,27 @@ export default function AdminCoursesPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the
+                                course and all its associated data (videos, documents, quizzes).
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteCourse(course.id)}>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}

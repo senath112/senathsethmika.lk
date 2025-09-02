@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
@@ -165,4 +165,16 @@ export async function addQuiz(courseId: string, quizData: any) {
              errors: { firestore: ['Failed to add quiz to database.'] }
         }
     }
+}
+
+export async function deleteCourse(courseId: string) {
+  try {
+    await deleteDoc(doc(db, "courses", courseId));
+    return { message: 'Course deleted successfully.' };
+  } catch (error) {
+    console.error("Error deleting course: ", error);
+    return {
+      errors: { firestore: ['Failed to delete course from database.'] }
+    }
+  }
 }
