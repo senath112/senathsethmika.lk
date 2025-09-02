@@ -95,7 +95,8 @@ export default function BillingPage() {
     try {
         const pdfBase64 = await generatePaymentPdf({
             ...payment,
-            studentName: studentName
+            studentName: studentName,
+            studentId: user.uid,
         });
         const link = document.createElement('a');
         link.href = `data:application/pdf;base64,${pdfBase64}`;

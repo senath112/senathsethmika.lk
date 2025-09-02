@@ -11,13 +11,14 @@ const PaymentSchema = z.object({
   course: z.string(),
   amount: z.string(),
   studentName: z.string(),
+  studentId: z.string(),
 });
 
 type Payment = z.infer<typeof PaymentSchema>;
 
 export async function generatePaymentPdf(payment: Payment): Promise<string> {
     const validatedPayment = PaymentSchema.parse(payment);
-    const { invoice, date, course, amount, studentName } = validatedPayment;
+    const { invoice, date, course, amount, studentName, studentId } = validatedPayment;
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([600, 400]);
@@ -56,6 +57,18 @@ export async function generatePaymentPdf(payment: Payment): Promise<string> {
         page.drawText(detail.label, { x: 50, y, font: regularFont, size: 12, color: rgb(0.4, 0.4, 0.4) });
         page.drawText(detail.value, { x: 150, y, font, size: 12, color: rgb(0.1, 0.1, 0.1) });
     });
+    
+    // QR Code
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${studentId}`;
+    const qrImageBytes = await fetch(qrCodeUrl).then((res) => res.arrayBuffer());
+    const qrImage = await pdfDoc.embedPng(qrImageBytes);
+    page.drawImage(qrImage, {
+        x: width - 100,
+        y: 80,
+        width: 80,
+        height: 80,
+    })
+
 
     // Footer
     page.drawText('Thank you for your payment!', {
