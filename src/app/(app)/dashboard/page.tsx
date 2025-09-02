@@ -78,13 +78,13 @@ function StudentIdCard() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setStudentName(data.name || user.displayName || "Student Name");
-          setStudentMajor(data.major || "Not specified");
+          setStudentMajor(data.major || "");
           setStudentOlYear(data.olYear || "");
           setMobileNumber(data.mobile || "");
           setLocation(data.location || null);
         } else {
            setStudentName(user.displayName || "Student Name");
-           setStudentMajor("Not specified");
+           setStudentMajor("");
         }
         setLoading(false);
       }
@@ -233,7 +233,7 @@ function StudentIdCard() {
                 </div>
                 <div>
                   <Label htmlFor="studentMajor" className="sr-only">Major</Label>
-                  <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" />
+                  <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" placeholder="Your Major (e.g. Science)" />
                 </div>
                 <div>
                    <Label htmlFor="mobileNumber" className="sr-only">Mobile Number</Label>
@@ -243,7 +243,7 @@ function StudentIdCard() {
             ) : (
               <div>
                 <CardTitle className="text-2xl">{studentName}</CardTitle>
-                <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>
+                {studentMajor && <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>}
                 {mobileNumber && <p className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" />{mobileNumber}</p>}
               </div>
             )}
