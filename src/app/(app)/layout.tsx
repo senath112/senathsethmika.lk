@@ -23,11 +23,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-sky-500' },
-  { href: '/courses', label: 'Courses', icon: GraduationCap, color: 'text-emerald-500' },
-  { href: '/documents', label: 'Documents', icon: FileText, color: 'text-amber-500' },
-  { href: '/billing', label: 'Billing', icon: CreditCard, color: 'text-violet-500' },
-  { href: '/notices', label: 'Notices', icon: Bell, color: 'text-rose-500' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, bgColor: 'bg-sky-500 hover:bg-sky-600', iconColor: 'text-sky-500' },
+  { href: '/courses', label: 'Courses', icon: GraduationCap, bgColor: 'bg-emerald-500 hover:bg-emerald-600', iconColor: 'text-emerald-500' },
+  { href: '/documents', label: 'Documents', icon: FileText, bgColor: 'bg-amber-500 hover:bg-amber-600', iconColor: 'text-amber-500' },
+  { href: '/billing', label: 'Billing', icon: CreditCard, bgColor: 'bg-violet-500 hover:bg-violet-600', iconColor: 'text-violet-500' },
+  { href: '/notices', label: 'Notices', icon: Bell, bgColor: 'bg-rose-500 hover:bg-rose-600', iconColor: 'text-rose-500' },
 ];
 
 function SidebarNav() {
@@ -41,11 +41,15 @@ function SidebarNav() {
             <TooltipTrigger asChild>
                <Button
                 variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className="w-full justify-center h-12 w-12 rounded-full"
+                className={cn(
+                    "w-full justify-center h-12 w-12 rounded-full text-white",
+                    item.bgColor,
+                    pathname.startsWith(item.href) && "ring-2 ring-offset-2 ring-offset-background ring-primary"
+                )}
                 asChild
               >
                 <Link href={item.href}>
-                  <item.icon className={cn("h-5 w-5", item.color)} />
+                  <item.icon className="h-5 w-5" />
                   <span className="sr-only">{item.label}</span>
                 </Link>
               </Button>
@@ -126,7 +130,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         asChild
                     >
                         <Link href={item.href}>
-                        <item.icon className={cn("mr-2 h-5 w-5", item.color)} />
+                        <item.icon className={cn("mr-2 h-5 w-5", item.iconColor)} />
                         <span>{item.label}</span>
                         </Link>
                     </Button>
