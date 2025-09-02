@@ -34,23 +34,23 @@ function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col items-start gap-2">
+    <nav className="flex flex-col items-center gap-2">
        <TooltipProvider delayDuration={0}>
         {NAV_ITEMS.map((item) => (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
                <Button
                 variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className="w-full justify-start md:justify-center md:h-12 md:w-12 rounded-full"
+                className="w-full justify-center h-12 w-12 rounded-full"
                 asChild
               >
                 <Link href={item.href}>
-                  <item.icon className={cn("mr-2 h-5 w-5 md:mr-0", item.color)} />
-                  <span className="md:hidden">{item.label}</span>
+                  <item.icon className={cn("h-5 w-5", item.color)} />
+                  <span className="sr-only">{item.label}</span>
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="right" className="md:block hidden">
+             <TooltipContent side="right">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -102,53 +102,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Mobile Header */}
-       <header className="flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40 md:hidden">
+    <div className="relative min-h-screen">
+
+      {/* Mobile Header - Floating Pill */}
+       <header className="md:hidden fixed top-4 left-4 right-4 z-50 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button variant="ghost" size="icon" className="shrink-0">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
-              <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+              <div className="flex items-center gap-2 text-lg font-semibold mb-4 border-b pb-4">
                   <Logo />
               </div>
-              <SidebarNav />
+              <nav className="flex flex-col gap-2">
+                {NAV_ITEMS.map((item) => (
+                    <Button
+                        key={item.href}
+                        variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+                        className="w-full justify-start"
+                        asChild
+                    >
+                        <Link href={item.href}>
+                        <item.icon className={cn("mr-2 h-5 w-5", item.color)} />
+                        <span>{item.label}</span>
+                        </Link>
+                    </Button>
+                ))}
+            </nav>
             </SheetContent>
           </Sheet>
-           <div className="w-full flex-1 md:hidden text-center">
+          <div className="flex-1 text-center">
             <Logo className="inline-flex" />
           </div>
           <UserNav />
         </header>
         
-       {/* Desktop Header */}
-       <header className="hidden md:flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-lg px-4 lg:h-[60px] lg:px-6 sticky top-0 z-40">
+       {/* Desktop Header - Floating Pill */}
+       <header className="hidden md:flex fixed top-4 left-1/2 -translate-x-1/2 z-50 h-16 items-center gap-8 rounded-full border bg-card/80 backdrop-blur-lg px-8 shadow-lg">
         <Logo />
-        <div className="flex-1" />
+        <div className="h-6 w-px bg-border" />
         <UserNav />
       </header>
 
-      {/* Desktop Dock */}
-      <div className="hidden md:block fixed top-1/2 -translate-y-1/2 left-4 z-50">
-        <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg">
+      {/* Desktop Dock - Floating Pill */}
+      <aside className="hidden md:block fixed top-1/2 -translate-y-1/2 left-4 z-50">
+        <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2">
             <SidebarNav />
         </div>
-      </div>
+      </aside>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pt-24">
         {children}
       </main>
 
-      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground md:pl-24">
-        <p className="font-bold">Senath Sethmika</p>
-        <p className="font-medium text-primary">විද්‍යාවේ හදගැස්ම</p>
-        <div className="flex justify-center gap-4 mt-2 text-sm">
-            <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
-            <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
+      <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-auto mx-auto">
+        <div className="bg-card/80 backdrop-blur-lg border rounded-full py-2 px-6 shadow-lg text-center">
+            <p className="font-bold">Senath Sethmika</p>
+            <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
         </div>
       </footer>
     </div>
