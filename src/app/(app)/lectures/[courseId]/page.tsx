@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc, collection, query, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,10 +75,11 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
 
   useEffect(() => {
     if (!user || !isClient) return;
+    const courseId = params.courseId;
 
     async function fetchCourse() {
       setLoading(true);
-      const courseRef = doc(db, 'courses', params.courseId);
+      const courseRef = doc(db, 'courses', courseId);
       const courseSnap = await getDoc(courseRef);
 
       if (courseSnap.exists()) {
@@ -90,7 +91,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         for (const video of courseData.youtubeVideos) {
           const videoId = getYouTubeVideoId(video.url);
           if (videoId) {
-            counts[videoId] = await getVideoViewCount(user.uid, params.courseId, videoId);
+            counts[videoId] = await getVideoViewCount(user.uid, courseId, videoId);
           }
         }
         setVideoViewCounts(counts);
@@ -103,7 +104,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
     fetchCourse();
     
     // Fetch documents
-    const documentsQuery = query(collection(db, 'documents'), where('courseId', '==', params.courseId));
+    const documentsQuery = query(collection(db, 'documents'), where('courseId', '==', courseId));
     const unsubscribeDocs = onSnapshot(documentsQuery, (querySnapshot) => {
         const docsData: Document[] = [];
         querySnapshot.forEach((doc) => docsData.push({ id: doc.id, ...doc.data() } as Document));
@@ -111,7 +112,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
     });
 
     // Fetch quizzes
-    const quizzesQuery = query(collection(db, 'courses', params.courseId, 'quizzes'));
+    const quizzesQuery = query(collection(db, 'courses', courseId, 'quizzes'));
     const unsubscribeQuizzes = onSnapshot(quizzesQuery, (snapshot) => {
         const quizzesData: Quiz[] = [];
         snapshot.forEach(doc => quizzesData.push({ id: doc.id, ...doc.data() } as Quiz));
