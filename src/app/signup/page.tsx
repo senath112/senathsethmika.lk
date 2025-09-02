@@ -10,8 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { Atom } from 'lucide-react';
 import React, { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, db, googleProvider } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -82,9 +82,8 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignUp = async () => {
-    const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
        await setDoc(doc(db, "students", user.uid), {
         name: user.displayName,

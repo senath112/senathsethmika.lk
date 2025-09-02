@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -31,5 +31,12 @@ auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
 
+const googleProvider = new GoogleAuthProvider();
+if (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+    googleProvider.setCustomParameters({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    });
+}
 
-export { app, db, auth, storage };
+
+export { app, db, auth, storage, googleProvider };
