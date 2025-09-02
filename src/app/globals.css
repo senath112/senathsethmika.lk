@@ -54,6 +54,18 @@
   }
 }
 
+@keyframes move-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -64,10 +76,14 @@
   body {
     @apply bg-background text-foreground;
      background-image: linear-gradient(to top, #d299c2 0%, #fef9d7 100%);
+     background-size: 400% 400%;
+     animation: move-bg 15s ease infinite;
   }
 
   .dark body {
     background-image: linear-gradient(to right, #243949 0%, #517fa4 100%);
+    background-size: 400% 400%;
+    animation: move-bg 15s ease infinite;
   }
 }
 
