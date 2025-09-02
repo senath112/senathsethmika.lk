@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X, MapPin, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X, MapPin, Loader2, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState, useRef } from "react";
@@ -55,6 +55,7 @@ function StudentIdCard() {
   const [studentName, setStudentName] = useState("");
   const [studentMajor, setStudentMajor] = useState("");
   const [studentOlYear, setStudentOlYear] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [location, setLocation] = useState<Location | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,7 @@ function StudentIdCard() {
           setStudentName(data.name || user.displayName || "Student Name");
           setStudentMajor(data.major || "Not specified");
           setStudentOlYear(data.olYear || "");
+          setMobileNumber(data.mobile || "");
           setLocation(data.location || null);
         } else {
            setStudentName(user.displayName || "Student Name");
@@ -138,6 +140,7 @@ function StudentIdCard() {
         id: user.uid,
         name: studentName,
         major: studentMajor,
+        mobile: mobileNumber,
         location: location || undefined,
       });
       setIsEditing(false);
@@ -198,7 +201,7 @@ function StudentIdCard() {
 
   const studentId = user?.uid.substring(0, 5).toUpperCase() || 'XXXXX';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${user?.uid || 'N/A'}`;
-  const isProfileComplete = !!location;
+  const isProfileComplete = !!location && !!mobileNumber;
 
   return (
     <>
@@ -232,11 +235,16 @@ function StudentIdCard() {
                   <Label htmlFor="studentMajor" className="sr-only">Major</Label>
                   <Input id="studentMajor" value={studentMajor} onChange={(e) => setStudentMajor(e.target.value)} className="text-primary font-medium p-0 border-none shadow-none focus-visible:ring-0" />
                 </div>
+                <div>
+                   <Label htmlFor="mobileNumber" className="sr-only">Mobile Number</Label>
+                   <Input id="mobileNumber" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="Mobile Number" className="text-sm p-0 border-none shadow-none focus-visible:ring-0" />
+                </div>
               </div>
             ) : (
               <div>
                 <CardTitle className="text-2xl">{studentName}</CardTitle>
                 <CardDescription className="text-primary font-medium">{studentMajor}</CardDescription>
+                {mobileNumber && <p className="text-sm text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" />{mobileNumber}</p>}
               </div>
             )}
           </div>
@@ -251,7 +259,7 @@ function StudentIdCard() {
             <p className="font-semibold">12/2026</p>
             {!isProfileComplete && (
                 <p className="text-xs text-red-500 mt-4">
-                    Profile incomplete. Please update your location.
+                    Profile incomplete. Please update your details.
                 </p>
             )}
           </div>

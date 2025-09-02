@@ -9,6 +9,7 @@ const StudentDetailsSchema = z.object({
   id: z.string(),
   name: z.string(),
   major: z.string(),
+  mobile: z.string().optional(),
   location: z.object({
     latitude: z.number(),
     longitude: z.number(),
@@ -22,6 +23,10 @@ export async function saveStudentDetails(details: z.infer<typeof StudentDetailsS
     name: validatedDetails.name,
     major: validatedDetails.major,
   };
+
+  if (validatedDetails.mobile) {
+    dataToSave.mobile = validatedDetails.mobile;
+  }
 
   if (validatedDetails.location) {
     dataToSave.location = validatedDetails.location;

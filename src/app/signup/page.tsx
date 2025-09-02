@@ -42,6 +42,7 @@ export default function SignupPage() {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [mobile, setMobile] = React.useState('');
   const [olYear, setOlYear] = React.useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -65,6 +66,7 @@ export default function SignupPage() {
         name: name,
         email: user.email,
         olYear: olYear,
+        mobile: mobile,
         province: selectedProvince,
         district: selectedDistrict
       });
@@ -87,6 +89,7 @@ export default function SignupPage() {
        await setDoc(doc(db, "students", user.uid), {
         name: user.displayName,
         email: user.email,
+        mobile: user.phoneNumber
       }, { merge: true });
        router.push('/dashboard');
     } catch (error: any) {
@@ -142,6 +145,17 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="mobile">Mobile Number</Label>
+              <Input
+                id="mobile"
+                type="tel"
+                placeholder="e.g. 0771234567"
+                required
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
               />
             </div>
             <div className="space-y-2">
