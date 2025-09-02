@@ -89,6 +89,7 @@ interface Course {
   description: string;
   image: string;
   aiHint: string;
+  courseFee: string;
   youtubeVideos?: CourseVideo[];
   documents?: Document[];
   quizzes?: Quiz[];
@@ -402,6 +403,15 @@ export default function AdminCoursesPage() {
                     id="description"
                     name="description"
                     placeholder="A brief summary of the course."
+                    required
+                  />
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="courseFee">Course Fee</Label>
+                  <Input
+                    id="courseFee"
+                    name="courseFee"
+                    placeholder="e.g., LKR 5000.00"
                     required
                   />
                 </div>

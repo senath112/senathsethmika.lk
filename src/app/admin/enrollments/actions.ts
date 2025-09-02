@@ -23,7 +23,7 @@ export async function handleEnrollmentRequest(requestId: string, status: 'approv
                     studentId: requestData.studentId,
                     courseId: requestData.courseId,
                     course: courseData.title,
-                    amount: 'LKR 5000.00', // Placeholder amount
+                    amount: courseData.courseFee || 'LKR 0.00',
                     status: 'Paid',
                     date: format(new Date(), 'yyyy-MM-dd'),
                     invoice: `INV-${Date.now().toString().slice(-6)}`,

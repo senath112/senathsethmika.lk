@@ -15,6 +15,7 @@ const videoObjectSchema = z.object({
 const courseSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
+  courseFee: z.string().min(1, { message: 'Course fee is required.' }),
   image: z.string().url({ message: 'Please enter a valid image URL.' }).optional(),
   youtubeVideos: z.array(videoObjectSchema).optional(),
 });
@@ -55,6 +56,7 @@ export async function addCourse(prevState: any, formData: FormData) {
   const validatedFields = courseSchema.safeParse({
     title: formData.get('title'),
     description: formData.get('description'),
+    courseFee: formData.get('courseFee'),
     image: formData.get('image'),
     youtubeVideos: youtubeVideos.length > 0 ? youtubeVideos : undefined,
   });
@@ -69,6 +71,7 @@ export async function addCourse(prevState: any, formData: FormData) {
     await addDoc(collection(db, "courses"), {
       title: validatedFields.data.title,
       description: validatedFields.data.description,
+      courseFee: validatedFields.data.courseFee,
       youtubeVideos: validatedFields.data.youtubeVideos || [],
       image: validatedFields.data.image || `https://picsum.photos/600/400`,
       aiHint: `science ${validatedFields.data.title.split(' ')[0].toLowerCase()}`,
