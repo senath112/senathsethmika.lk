@@ -17,6 +17,7 @@ import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as htmlToImage from 'html-to-image';
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Location {
     latitude: number;
@@ -196,7 +197,8 @@ function StudentIdCard() {
   }
 
   const studentId = user?.uid.substring(0, 5).toUpperCase() || 'XXXXX';
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${user?.uid || 'N/A'}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${user?.uid || 'N/A'}`;
+  const isProfileComplete = !!location;
 
   return (
     <>
@@ -242,16 +244,15 @@ function StudentIdCard() {
         <CardContent className="p-4 sm:p-6 grid grid-cols-2 gap-4 items-start">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Student ID</p>
-            <p className="font-semibold">{studentOlYear}{studentId}</p>
+            <p className={cn("font-semibold", !isProfileComplete && "text-red-500")}>
+                {studentOlYear}{studentId}
+            </p>
             <p className="text-sm font-medium text-muted-foreground mt-4">Valid Thru</p>
             <p className="font-semibold">12/2026</p>
-             <p className="text-sm font-medium text-muted-foreground mt-4">Location</p>
-             {location ? (
-                <p className="font-semibold text-xs">
-                    Lat: {location.latitude.toFixed(4)}, Lon: {location.longitude.toFixed(4)}
+            {!isProfileComplete && (
+                <p className="text-xs text-red-500 mt-4">
+                    Profile incomplete. Please update your location.
                 </p>
-            ) : (
-                 <p className="font-semibold text-xs text-muted-foreground">Not set</p>
             )}
           </div>
           <div className="flex justify-end">
@@ -260,7 +261,7 @@ function StudentIdCard() {
               alt="QR Code"
               width={100}
               height={100}
-              className="rounded-md"
+              className={cn("rounded-md", !isProfileComplete && "border-2 border-red-500 p-1")}
               data-ai-hint="qr code"
             />
           </div>
