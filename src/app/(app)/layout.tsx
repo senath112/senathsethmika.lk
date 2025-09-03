@@ -90,9 +90,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = React.useState(false);
+  const [isScrolled, setIsScrolled] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   React.useEffect(() => {
@@ -121,7 +130,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       
       <div className="flex flex-col flex-1 md:ml-24">
         {/* Mobile & Desktop Header - Floating Pill */}
-        <header className="fixed top-4 left-4 right-4 md:left-28 z-40 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
+        <header className={cn(
+            "fixed top-4 left-4 right-4 md:left-28 z-40 flex items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg transition-all duration-300",
+            isScrolled ? 'h-14' : 'h-16'
+        )}>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
