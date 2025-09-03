@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { requestEnrollment } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { subDays } from "date-fns";
 
 interface Course {
@@ -47,6 +47,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStatus, setEnrollmentStatus] = useState<Record<string, EnrollmentStatus>>({});
+  const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -83,8 +84,8 @@ export default function CoursesPage() {
         const data = doc.data();
         if (data.status === 'approved') {
              statuses[data.courseId] = 'enrolled';
-        } else {
-             statuses[data.courseId] = data.status;
+        } else if (data.status === 'pending') {
+             statuses[data.courseId] = 'pending';
         }
       });
       setEnrollmentStatus(statuses);
@@ -98,12 +99,15 @@ export default function CoursesPage() {
       return;
     }
     
+    setEnrollingCourseId(courseId);
     try {
       await requestEnrollment(courseId, user.uid, user.displayName || 'Anonymous');
       setEnrollmentStatus(prev => ({ ...prev, [courseId]: 'pending' }));
       toast({ title: 'Success', description: 'Enrollment request sent successfully!' });
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to send enrollment request.' });
+    } finally {
+      setEnrollingCourseId(null);
     }
   };
 
@@ -117,6 +121,7 @@ export default function CoursesPage() {
         {loading && Array.from({length: 6}).map((_, i) => <CourseSkeleton key={i} />)}
         {!loading && courses.map((course) => {
             const status = enrollmentStatus[course.id] || 'none';
+            const isEnrolling = enrollingCourseId === course.id;
             return (
               <Card key={course.id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                 <div className="relative h-48 w-full">
@@ -144,9 +149,18 @@ export default function CoursesPage() {
                         <Button 
                             className="w-full" 
                             onClick={() => handleEnroll(course.id)}
-                            disabled={status === 'pending'}
+                            disabled={status === 'pending' || isEnrolling}
                         >
-                            {status === 'pending' ? 'Request Sent' : 'Enroll Now'}
+                            {isEnrolling ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Sending...
+                              </>
+                            ) : status === 'pending' ? (
+                              'Request Sent'
+                            ) : (
+                              'Enroll Now'
+                            )}
                         </Button>
                     )}
                 </CardFooter>
