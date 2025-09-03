@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Check, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -104,7 +104,7 @@ export default function AnalysisPage() {
                 <CardContent>
                     <div className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data}>
+                            <LineChart data={data}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="quizTitle" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} interval={0} angle={-30} textAnchor="end" height={80} />
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} domain={[0, 100]} />
@@ -116,8 +116,8 @@ export default function AnalysisPage() {
                                     }}
                                 />
                                 <Legend />
-                                <Bar dataKey="percentage" fill="hsl(var(--primary))" name="Your Score (%)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                                <Line type="monotone" dataKey="percentage" stroke="hsl(var(--primary))" name="Your Score (%)" activeDot={{ r: 8 }} />
+                            </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </CardContent>
