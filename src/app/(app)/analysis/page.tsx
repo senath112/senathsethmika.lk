@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Responsive
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Check, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,8 +43,7 @@ export default function AnalysisPage() {
         setLoading(true);
         const q = query(
             collection(db, 'quizResults'), 
-            where('studentId', '==', user.uid),
-            orderBy('submittedAt', 'asc')
+            where('studentId', '==', user.uid)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -53,6 +52,13 @@ export default function AnalysisPage() {
                 results.push({ id: doc.id, ...doc.data() } as QuizResult);
             });
             
+            // Sort results by date on the client side
+            results.sort((a, b) => {
+                const dateA = a.submittedAt?.toDate() || 0;
+                const dateB = b.submittedAt?.toDate() || 0;
+                return dateA - dateB;
+            });
+
             setMainExamResults(results.filter(r => r.category === 'Main Exam MCQ'));
             setDailyDoseResults(results.filter(r => r.category === 'Daily Dose MCQ'));
             setLoading(false);
