@@ -58,7 +58,7 @@ function SidebarNav() {
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="right">
+             <TooltipContent side="left">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -158,7 +158,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         
         <div className="flex flex-col">
             {/* Desktop Header */}
-            <header className="flex h-16 items-center gap-8 px-8 sticky top-0 z-40">
+            <header className="hidden md:flex h-16 items-center gap-8 px-8 sticky top-0 z-40">
                 <div className="ml-auto">
                     <UserNav />
                 </div>
