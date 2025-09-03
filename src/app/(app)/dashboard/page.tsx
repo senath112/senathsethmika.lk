@@ -375,13 +375,13 @@ function DashboardGreeting() {
         const hour = new Date().getHours();
         if (hour < 12) {
             setGreeting('Good morning');
-            setIcon(Sun);
+            setIcon(() => Sun);
         } else if (hour < 17) {
             setGreeting('Good afternoon');
-            setIcon(CloudSun);
+            setIcon(() => CloudSun);
         } else {
             setGreeting('Good evening');
-            setIcon(Moon);
+            setIcon(() => Moon);
         }
     }, [user]);
 
@@ -389,10 +389,12 @@ function DashboardGreeting() {
         return <Skeleton className="h-8 w-1/2 mb-4" />;
     }
 
+    const Icon = icon;
+
     return (
         <div className="flex items-center gap-4 mb-8">
             <div className="bg-primary/10 p-3 rounded-full">
-                <icon.type {...icon.props} className="h-6 w-6 text-primary" />
+                <Icon className="h-6 w-6 text-primary" />
             </div>
             <div>
                 <h1 className="text-2xl font-bold">{greeting}, {studentName.split(' ')[0]}!</h1>
@@ -424,3 +426,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
