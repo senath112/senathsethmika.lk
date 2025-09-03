@@ -174,7 +174,7 @@ export default function DocumentsPage() {
                 <AlertDescription>
                   It looks like you're not enrolled in any courses that have documents yet, or no documents have been uploaded for your courses.
                    <Button asChild variant="link" className="p-0 ml-1 h-auto">
-                      <Link href="/courses">Browse Courses</Link>
+                      <Link href="/store">Browse Store</Link>
                    </Button>
                 </AlertDescription>
             </Alert>

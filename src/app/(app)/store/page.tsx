@@ -51,7 +51,7 @@ function CourseSkeleton() {
     )
 }
 
-export default function CoursesPage() {
+export default function StorePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentStatus, setEnrollmentStatus] = useState<Record<string, EnrollmentDetails>>({});
@@ -118,7 +118,7 @@ export default function CoursesPage() {
   return (
     <>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Courses</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Store</h1>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {loading && Array.from({length: 6}).map((_, i) => <CourseSkeleton key={i} />)}

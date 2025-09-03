@@ -44,7 +44,7 @@ export default function HomePage() {
                      <Link href="/signup">Get Started <ArrowRight className="ml-2" /></Link>
                   </Button>
                    <Button size="lg" variant="secondary" asChild>
-                     <Link href="/courses">Explore Courses</Link>
+                     <Link href="/store">Explore Courses</Link>
                    </Button>
                 </div>
               </div>
