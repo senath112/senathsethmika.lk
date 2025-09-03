@@ -24,6 +24,7 @@ interface User {
   olYear: string;
   province: string;
   district: string;
+  gender: string;
 }
 
 export default function AdminUsersPage() {
@@ -42,6 +43,7 @@ export default function AdminUsersPage() {
           olYear: data.olYear || "N/A",
           province: data.province || "N/A",
           district: data.district || "N/A",
+          gender: data.gender || "N/A",
           status: "Active", // Assuming all users are active for now
         });
       });
@@ -69,6 +71,7 @@ export default function AdminUsersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>O/L Year</TableHead>
+                <TableHead>Gender</TableHead>
                 <TableHead>District</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -80,6 +83,7 @@ export default function AdminUsersPage() {
                   <TableCell>{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.olYear}</TableCell>
+                  <TableCell>{user.gender}</TableCell>
                   <TableCell>{user.district}</TableCell>
                   <TableCell>
                      <Badge variant={user.status === 'Active' ? 'secondary' : 'outline'} className={user.status === 'Active' ? 'bg-green-100 text-green-800' : ''}>{user.status}</Badge>

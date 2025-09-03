@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Atom } from 'lucide-react';
 import React, { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth';
 import { auth, db, googleProvider } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -46,6 +46,7 @@ export default function SignupPage() {
   const [olYear, setOlYear] = React.useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [gender, setGender] = useState('');
   const router = useRouter();
   const { toast } = useToast();
   
@@ -62,13 +63,16 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      await updateProfile(user, { displayName: name });
+
       await setDoc(doc(db, "students", user.uid), {
         name: name,
         email: user.email,
         olYear: olYear,
         mobile: mobile,
         province: selectedProvince,
-        district: selectedDistrict
+        district: selectedDistrict,
+        gender: gender,
       });
 
       router.push('/dashboard');
@@ -88,7 +92,8 @@ export default function SignupPage() {
        await setDoc(doc(db, "students", user.uid), {
         name: user.displayName,
         email: user.email,
-        mobile: user.phoneNumber
+        mobile: user.phoneNumber,
+        photoURL: user.photoURL,
       }, { merge: true });
        router.push('/dashboard');
     } catch (error: any) {
@@ -157,16 +162,30 @@ export default function SignupPage() {
                 onChange={(e) => setMobile(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="olYear">O/L Year</Label>
-              <Input
-                id="olYear"
-                type="text"
-                placeholder="e.g., 2025"
-                required
-                value={olYear}
-                onChange={(e) => setOlYear(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                <Label htmlFor="olYear">O/L Year</Label>
+                <Input
+                    id="olYear"
+                    type="text"
+                    placeholder="e.g., 2025"
+                    required
+                    value={olYear}
+                    onChange={(e) => setOlYear(e.target.value)}
+                />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select onValueChange={setGender} value={gender}>
+                        <SelectTrigger id="gender">
+                        <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="province">Province</Label>

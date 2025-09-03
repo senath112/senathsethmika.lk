@@ -57,6 +57,7 @@ function StudentIdCard() {
   const [studentMajor, setStudentMajor] = useState("");
   const [studentOlYear, setStudentOlYear] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [gender, setGender] = useState("");
   const [location, setLocation] = useState<Location | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,7 @@ function StudentIdCard() {
           setStudentMajor(data.major || "");
           setStudentOlYear(data.olYear || "");
           setMobileNumber(data.mobile || "");
+          setGender(data.gender || "");
           setLocation(data.location || null);
         } else {
            setStudentName(user.displayName || "Student Name");
@@ -207,6 +209,13 @@ function StudentIdCard() {
   const studentId = user?.uid.substring(0, 5).toUpperCase() || 'XXXXX';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${user?.uid || 'N/A'}`;
   const isProfileComplete = !!location && !!mobileNumber;
+  
+  const getAvatarUrl = () => {
+      if (user?.photoURL) return user.photoURL;
+      if (gender === 'Male') return `https://avatar.iran.liara.run/public/boy?username=${user?.uid}`;
+      if (gender === 'Female') return `https://avatar.iran.liara.run/public/girl?username=${user?.uid}`;
+      return `https://avatar.iran.liara.run/public?username=${user?.uid}`; // default
+  }
 
   return (
     <>
@@ -226,7 +235,7 @@ function StudentIdCard() {
        <div ref={idCardRef} className="bg-card">
          <div className="bg-primary/10 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
           <Avatar className="h-24 w-24 border-4 border-white shadow-md">
-            <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="Student Name" data-ai-hint="person" />
+            <AvatarImage src={getAvatarUrl()} alt={studentName} data-ai-hint="person" />
             <AvatarFallback>{studentName?.charAt(0) || 'S'}</AvatarFallback>
           </Avatar>
           <div className="text-center sm:text-left flex-grow">

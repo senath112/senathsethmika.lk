@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
@@ -8,7 +9,6 @@ import { getStorage, FirebaseStorage } from "firebase/storage";
 const firebaseConfig = {
   apiKey: "AIzaSyDTppb1WVIZes6Lj_aHHzSwk77LWF2Gvj8",
   authDomain: "synapse-learning-xpw9a.firebaseapp.com",
-  databaseURL: "https://synapse-learning-xpw9a-default-rtdb.firebaseio.com",
   projectId: "synapse-learning-xpw9a",
   storageBucket: "synapse-learning-xpw9a.appspot.com",
   messagingSenderId: "413572779495",

@@ -28,21 +28,24 @@ import { doc, getDoc } from 'firebase/firestore';
 export function UserNav() {
   const { user } = useAuth();
   const [studentName, setStudentName] = useState("Student Name");
+  const [gender, setGender] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchStudentName() {
+    async function fetchStudentData() {
       if (user) {
         const docRef = doc(db, "students", user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setStudentName(docSnap.data().name || user.displayName || "Student Name");
+          const data = docSnap.data();
+          setStudentName(data.name || user.displayName || "Student Name");
+          setGender(data.gender || "");
         } else {
           setStudentName(user.displayName || "Student Name");
         }
       }
     }
-    fetchStudentName();
+    fetchStudentData();
   }, [user]);
 
   const handleSignOut = async () => {
@@ -50,12 +53,19 @@ export function UserNav() {
     router.push('/login');
   }
 
+  const getAvatarUrl = () => {
+      if (user?.photoURL) return user.photoURL;
+      if (gender === 'Male') return `https://avatar.iran.liara.run/public/boy?username=${user?.uid}`;
+      if (gender === 'Female') return `https://avatar.iran.liara.run/public/girl?username=${user?.uid}`;
+      return `https://avatar.iran.liara.run/public?username=${user?.uid}`;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.photoURL || "https://picsum.photos/100"} alt="@student" data-ai-hint="person" />
+            <AvatarImage src={getAvatarUrl()} alt={studentName} data-ai-hint="person" />
             <AvatarFallback>{studentName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'S'}</AvatarFallback>
           </Avatar>
         </Button>
