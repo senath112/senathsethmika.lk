@@ -131,7 +131,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col flex-1 md:ml-24">
         {/* Mobile & Desktop Header - Floating Pill */}
         <header className={cn(
-            "fixed top-4 left-4 right-4 md:left-28 z-40 flex items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg transition-all duration-300",
+            "fixed top-4 left-1/4 right-1/4 md:left-[30%] md:right-[10%] z-40 flex items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg transition-all duration-300",
             isScrolled ? 'h-14' : 'h-16'
         )}>
             <Sheet>
