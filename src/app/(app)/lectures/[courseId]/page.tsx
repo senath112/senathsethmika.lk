@@ -7,12 +7,11 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
-import { checkAndIncrementViewCount, getVideoViewCount, askQuestion } from './actions';
+import { askQuestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion, HelpCircle, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Ban, PlayCircle, BookCopy, FileText, Download, Loader2, FileQuestion, HelpCircle, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Image from 'next/image';
 import { getWatermarkedPdf } from '../../documents/actions';
 import { Badge } from '@/components/ui/badge';
@@ -51,8 +50,6 @@ interface Course {
   youtubeVideos: CourseVideo[];
 }
 
-const VIDEO_VIEW_LIMIT = 3;
-
 function getYouTubeVideoId(url: string) {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -60,13 +57,11 @@ function getYouTubeVideoId(url: string) {
     return (match && match[2].length == 11) ? match[2] : null;
 }
 
-export default function CourseVideosPage({ params }: { params: { courseId: string } }) {
+export default function CourseHubPage({ params }: { params: { courseId: string } }) {
   const [course, setCourse] = useState<Course | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [videoViewCounts, setVideoViewCounts] = useState<Record<string, number>>({});
   const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -74,8 +69,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   const [isClient, setIsClient] = useState(false);
   const [question, setQuestion] = useState('');
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
-  const [isPlaylistCollapsed, setIsPlaylistCollapsed] = useState(false);
-
 
   useEffect(() => {
       setIsClient(true);
@@ -94,16 +87,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         const courseData = { id: courseSnap.id, ...courseSnap.data() } as Course;
         courseData.youtubeVideos = courseData.youtubeVideos || [];
         setCourse(courseData);
-        
-        const counts: Record<string, number> = {};
-        for (const video of courseData.youtubeVideos) {
-          const videoId = getYouTubeVideoId(video.url);
-          if (videoId) {
-            counts[videoId] = await getVideoViewCount(user.uid, courseId, videoId);
-          }
-        }
-        setVideoViewCounts(counts);
-
       } else {
         setError("Course not found.");
       }
@@ -111,7 +94,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
     }
     fetchCourse();
     
-    // Fetch documents
     const documentsQuery = query(collection(db, 'documents'), where('courseId', '==', courseId));
     const unsubscribeDocs = onSnapshot(documentsQuery, (querySnapshot) => {
         const docsData: Document[] = [];
@@ -119,7 +101,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         setDocuments(docsData);
     });
 
-    // Fetch quizzes
     const quizzesQuery = query(collection(db, 'courses', courseId, 'quizzes'));
     const unsubscribeQuizzes = onSnapshot(quizzesQuery, (snapshot) => {
         const quizzesData: Quiz[] = [];
@@ -132,36 +113,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         unsubscribeQuizzes();
     }
   }, [user, params.courseId, isClient]);
-
-  const handleWatchVideo = async (videoUrl: string) => {
-      const videoId = getYouTubeVideoId(videoUrl);
-      if (!user || !videoId) return;
-
-      if (videoId === selectedVideo) {
-        return;
-      }
-
-      try {
-        const canWatch = await checkAndIncrementViewCount(user.uid, params.courseId, videoId);
-        if (canWatch) {
-            setSelectedVideo(videoId);
-            setVideoViewCounts(prev => ({...prev, [videoId]: (prev[videoId] || 0) + 1}));
-            setIsPlaylistCollapsed(true);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'View limit reached',
-                description: "You have already watched this video 3 times."
-            });
-        }
-      } catch (e) {
-         toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: "Could not play video. Please try again."
-        });
-      }
-  }
 
   const handleDownload = async (doc: Document) => {
     if (!user) return;
@@ -218,7 +169,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         }
     };
 
-
   const getDocIcon = (type: string) => {
     switch (type) {
       case 'Syllabus': return BookCopy;
@@ -248,31 +198,57 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-8">
-      <div className="space-y-8">
+    <div className="space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>Now Playing: {course.title}</CardTitle>
-                <CardDescription>
-                    {selectedVideo ? `Video from ${course.title}` : 'Select a video to start watching.'}
+                <CardTitle>{course.title}</CardTitle>
+                <CardDescription>{course.description}</CardDescription>
+            </CardHeader>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Available Videos</CardTitle>
+                 <CardDescription>
+                    Select a video to start watching. You can watch each video up to 3 times.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <AspectRatio ratio={16/9}>
-                    {selectedVideo ? (
-                          <iframe
-                            className="rounded-lg w-full h-full"
-                            src={`https://www.youtube.com/embed/${selectedVideo}?autoplay=1&controls=0`}
-                            title="YouTube video player"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
-                    ) : (
-                        <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-                            <p className="text-muted-foreground">Select a video from the list</p>
-                        </div>
-                    )}
-                </AspectRatio>
+                 {course.youtubeVideos.length > 0 ? (
+                    <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {course.youtubeVideos.map((video, index) => {
+                            const videoId = getYouTubeVideoId(video.url);
+                            if (!videoId) return null;
+                            const thumbnail = video.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+
+                            return (
+                                <Link key={index} href={`/lectures/${params.courseId}/watch/${videoId}`}>
+                                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                                        <div className="relative aspect-video">
+                                            <Image src={thumbnail} alt={video.description || `Lecture Part ${index + 1}`} fill className="object-cover" data-ai-hint="video thumbnail" />
+                                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                                <PlayCircle className="h-10 w-10 text-white" />
+                                            </div>
+                                        </div>
+                                        <CardHeader>
+                                            <CardTitle className="text-base">Lecture Part {index + 1}</CardTitle>
+                                            <CardDescription className="text-xs truncate" title={video.description}>
+                                                {video.description || 'No description'}
+                                            </CardDescription>
+                                        </CardHeader>
+                                    </Card>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <Alert variant="default">
+                        <AlertTitle>No Videos Available</AlertTitle>
+                        <AlertDescription>
+                            There are no videos for this course yet. Please check back later.
+                        </AlertDescription>
+                    </Alert>
+                )}
             </CardContent>
         </Card>
 
@@ -373,77 +349,6 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
             </CardContent>
         </Card>
       </div>
-      
-      <div 
-        className={cn(
-            "lg:sticky lg:top-24 lg:h-screen lg:overflow-y-auto transition-all duration-300 ease-in-out",
-            isPlaylistCollapsed ? "lg:w-28" : "lg:w-[350px]"
-        )}
-        onMouseEnter={() => selectedVideo && setIsPlaylistCollapsed(false)}
-        onMouseLeave={() => selectedVideo && setIsPlaylistCollapsed(true)}
-      >
-        <Card className="transition-all duration-300 ease-in-out">
-            <CardHeader className={cn("transition-all duration-300", isPlaylistCollapsed ? 'p-2' : 'p-6')}>
-                <CardTitle className={cn("transition-all duration-300", isPlaylistCollapsed ? 'text-base' : 'text-2xl')}>
-                    {isPlaylistCollapsed ? <ChevronsLeft className="h-5 w-5 mx-auto" /> : "Available Videos"}
-                </CardTitle>
-                 <CardDescription className={cn({ 'hidden': isPlaylistCollapsed })}>
-                    Select a video to play
-                </CardDescription>
-            </CardHeader>
-            <CardContent className={cn("space-y-2 transition-all duration-300", isPlaylistCollapsed ? 'p-2' : 'p-6')}>
-                {course.youtubeVideos.length > 0 ? course.youtubeVideos.map((video, index) => {
-                    const videoId = getYouTubeVideoId(video.url);
-                    if (!videoId) return null;
-                    const viewCount = videoViewCounts[videoId] || 0;
-                    const limitReached = viewCount >= VIDEO_VIEW_LIMIT;
-                    const thumbnail = video.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-
-                    return (
-                          <Card 
-                            key={index} 
-                            className={`overflow-hidden ${limitReached ? 'opacity-50' : 'cursor-pointer hover:shadow-md'}`}
-                            onClick={() => !limitReached && handleWatchVideo(video.url)}
-                          >
-                            <div className="flex items-center gap-4 p-2">
-                                  <div className="relative w-24 h-16 flex-shrink-0">
-                                    <Image src={thumbnail} alt={video.description || `Lecture Part ${index + 1}`} fill className="object-cover rounded-md" data-ai-hint="video thumbnail" />
-                                    {!limitReached && (
-                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                            <PlayCircle className="h-6 w-6 text-white" />
-                                        </div>
-                                    )}
-                                    {limitReached && (
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                            <Ban className="h-6 w-6 text-destructive" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className={cn("flex-1", { 'hidden': isPlaylistCollapsed })}>
-                                    <p className="font-semibold">Lecture Part {index + 1}</p>
-                                    <p className="text-xs text-muted-foreground truncate" title={video.description}>
-                                        {video.description || 'No description'}
-                                    </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        Views: {viewCount} / {VIDEO_VIEW_LIMIT}
-                                    </p>
-                                </div>
-                            </div>
-                          </Card>
-                    );
-                }) : (
-                      <Alert variant="default" className={cn({ 'hidden': isPlaylistCollapsed })}>
-                        <AlertTitle>No Videos Available</AlertTitle>
-                        <AlertDescription>
-                            There are no videos for this course yet. Please check back later.
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </CardContent>
-        </Card>
-      </div>
-    </div>
   );
 }
 
-    
