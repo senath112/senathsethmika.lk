@@ -12,13 +12,15 @@ import { Button } from '@/components/ui/button';
 import { checkAndIncrementViewCount, getVideoViewCount, askQuestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion, HelpCircle } from 'lucide-react';
+import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion, HelpCircle, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Image from 'next/image';
 import { getWatermarkedPdf } from '../../documents/actions';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+
 
 interface CourseVideo {
   url: string;
@@ -72,6 +74,8 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   const [isClient, setIsClient] = useState(false);
   const [question, setQuestion] = useState('');
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
+  const [isPlaylistCollapsed, setIsPlaylistCollapsed] = useState(false);
+
 
   useEffect(() => {
       setIsClient(true);
@@ -142,6 +146,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         if (canWatch) {
             setSelectedVideo(videoId);
             setVideoViewCounts(prev => ({...prev, [videoId]: (prev[videoId] || 0) + 1}));
+            setIsPlaylistCollapsed(true);
         } else {
             toast({
                 variant: 'destructive',
@@ -243,8 +248,8 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-8">
+      <div className="space-y-8">
         <Card>
             <CardHeader>
                 <CardTitle>Now Playing: {course.title}</CardTitle>
@@ -369,13 +374,24 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         </Card>
       </div>
       
-      <div className="lg:col-span-1">
-        <Card>
-            <CardHeader>
-                <CardTitle>Available Videos</CardTitle>
-                <CardDescription>Select a video to play</CardDescription>
+      <div 
+        className={cn(
+            "lg:sticky lg:top-24 lg:h-screen lg:overflow-y-auto transition-all duration-300 ease-in-out",
+            isPlaylistCollapsed ? "lg:w-28" : "lg:w-[350px]"
+        )}
+        onMouseEnter={() => selectedVideo && setIsPlaylistCollapsed(false)}
+        onMouseLeave={() => selectedVideo && setIsPlaylistCollapsed(true)}
+      >
+        <Card className="transition-all duration-300 ease-in-out">
+            <CardHeader className={cn("transition-all duration-300", isPlaylistCollapsed ? 'p-2' : 'p-6')}>
+                <CardTitle className={cn("transition-all duration-300", isPlaylistCollapsed ? 'text-base' : 'text-2xl')}>
+                    {isPlaylistCollapsed ? <ChevronsLeft className="h-5 w-5 mx-auto" /> : "Available Videos"}
+                </CardTitle>
+                 <CardDescription className={cn({ 'hidden': isPlaylistCollapsed })}>
+                    Select a video to play
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className={cn("space-y-2 transition-all duration-300", isPlaylistCollapsed ? 'p-2' : 'p-6')}>
                 {course.youtubeVideos.length > 0 ? course.youtubeVideos.map((video, index) => {
                     const videoId = getYouTubeVideoId(video.url);
                     if (!videoId) return null;
@@ -403,7 +419,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex-1">
+                                <div className={cn("flex-1", { 'hidden': isPlaylistCollapsed })}>
                                     <p className="font-semibold">Lecture Part {index + 1}</p>
                                     <p className="text-xs text-muted-foreground truncate" title={video.description}>
                                         {video.description || 'No description'}
@@ -416,7 +432,7 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                           </Card>
                     );
                 }) : (
-                      <Alert variant="default">
+                      <Alert variant="default" className={cn({ 'hidden': isPlaylistCollapsed })}>
                         <AlertTitle>No Videos Available</AlertTitle>
                         <AlertDescription>
                             There are no videos for this course yet. Please check back later.
@@ -429,3 +445,5 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
     </div>
   );
 }
+
+    
