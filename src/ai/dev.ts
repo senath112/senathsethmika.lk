@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/lecture-summary.ts';
 import '@/ai/flows/watermark-pdf.ts';
+import '@/ai/flows/science-bot.ts';
