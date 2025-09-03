@@ -20,7 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { requestEnrollment } from '@/app/(app)/courses/actions';
+import { requestEnrollment } from '@/app/(app)/store/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Camera, CameraOff, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
