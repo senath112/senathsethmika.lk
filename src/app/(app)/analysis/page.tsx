@@ -32,16 +32,21 @@ const ChartSkeleton = () => (
 );
 
 const ColoredDot = (props: any) => {
-    const { cx, cy, value } = props;
+    const { cx, cy, value, payload } = props;
+    const category: QuizResult['category'] = payload.category;
+    
     let color = "#8884d8"; // Default color
-    if (value >= 80) {
-        color = "#22c55e"; // green
-    } else if (value >= 60) {
-        color = "#facc15"; // yellow
-    } else if (value >= 30) {
-        color = "#f97316"; // orange
-    } else {
-        color = "#ef4444"; // red
+
+    if (category === 'Daily Dose MCQ') {
+        if (value >= 80) color = "#22c55e"; // green
+        else if (value >= 60) color = "#facc15"; // yellow
+        else if (value >= 30) color = "#f97316"; // orange
+        else color = "#ef4444"; // red
+    } else { // Main Exam MCQ
+        if (value >= 75) color = "#22c55e"; // green
+        else if (value >= 55) color = "#facc15"; // yellow
+        else if (value >= 25) color = "#f97316"; // orange
+        else color = "#ef4444"; // red
     }
 
     return <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={1} />;
@@ -204,7 +209,7 @@ export default function AnalysisPage() {
                     </>
                 ) : (
                     <>
-                        {renderChart(mainExamResults, "Main Exam MCQ Performance", "Your scores from major exams.")}
+                        {renderChart(mainExamResults, "Main Exam MCQ Performance", "Your scores from major exams.", true)}
                         {renderChart(dailyDoseResults, "Daily Dose MCQ Performance", "Your scores from daily practice quizzes.", true)}
                     </>
                 )}
