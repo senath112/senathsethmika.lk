@@ -2,16 +2,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 interface QuizQuestion {
   question: string;
@@ -26,6 +27,11 @@ interface Quiz {
   questions: QuizQuestion[];
 }
 
+interface QuizResultType {
+  score: number;
+  totalQuestions: number;
+}
+
 export default function QuizPage({ params }: { params: { courseId: string; quizId: string } }) {
   const { user } = useAuth();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -34,11 +40,32 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [existingResult, setExistingResult] = useState<QuizResultType | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    async function fetchQuiz() {
+    async function fetchQuizAndCheckHistory() {
       setLoading(true);
+
+      // Check for existing result first
+      const resultQuery = query(
+        collection(db, 'quizResults'),
+        where('studentId', '==', user.uid),
+        where('quizId', '==', params.quizId),
+        limit(1)
+      );
+      const resultSnapshot = await getDocs(resultQuery);
+      if (!resultSnapshot.empty) {
+        const resultData = resultSnapshot.docs[0].data();
+        setExistingResult({
+            score: resultData.score,
+            totalQuestions: resultData.totalQuestions
+        });
+        setLoading(false);
+        return;
+      }
+
+      // If no result, fetch the quiz
       const quizRef = doc(db, 'courses', params.courseId, 'quizzes', params.quizId);
       const quizSnap = await getDoc(quizRef);
       if (quizSnap.exists()) {
@@ -46,7 +73,7 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
       }
       setLoading(false);
     }
-    fetchQuiz();
+    fetchQuizAndCheckHistory();
   }, [user, params.courseId, params.quizId]);
 
   const handleAnswerSelect = (value: string) => {
@@ -92,6 +119,30 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
   if (loading) {
     return <QuizSkeleton />;
   }
+  
+  if (existingResult) {
+      const quizRef = doc(db, 'courses', params.courseId, 'quizzes', params.quizId);
+      const quizSnap = getDoc(quizRef);
+
+      return (
+        <Card className="max-w-3xl mx-auto">
+            <CardHeader className="text-center">
+                <CardTitle>Quiz Already Completed!</CardTitle>
+                <CardDescription>You have already taken this quiz. Here is your score.</CardDescription>
+                <p className="text-4xl font-bold text-primary">{existingResult.score} / {existingResult.totalQuestions}</p>
+            </CardHeader>
+             <CardContent className="flex flex-col items-center gap-4">
+                <p>You can view how you stack up against others on the leaderboard.</p>
+                <Button asChild>
+                    <Link href={`/courses/${params.courseId}/quiz/${params.quizId}/leaderboard`}>
+                        <Trophy className="mr-2 h-4 w-4" />
+                        View Leaderboard
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
+  }
 
   if (!quiz) {
     return <Alert variant="destructive">
@@ -101,7 +152,7 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
   }
 
   if (isSubmitted) {
-    return <QuizResult quiz={quiz} score={score} selectedAnswers={selectedAnswers} />
+    return <QuizResult quiz={quiz} score={score} selectedAnswers={selectedAnswers} params={params} />
   }
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
@@ -142,7 +193,7 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
   );
 }
 
-function QuizResult({ quiz, score, selectedAnswers }: { quiz: Quiz, score: number, selectedAnswers: Record<number, string> }) {
+function QuizResult({ quiz, score, selectedAnswers, params }: { quiz: Quiz, score: number, selectedAnswers: Record<number, string>, params: { courseId: string; quizId: string } }) {
   return (
     <Card className="max-w-3xl mx-auto">
         <CardHeader className="text-center">
@@ -169,7 +220,12 @@ function QuizResult({ quiz, score, selectedAnswers }: { quiz: Quiz, score: numbe
                 })}
             </div>
              <div className="mt-6 flex justify-center">
-                <Button onClick={() => window.location.reload()}>Retake Quiz</Button>
+                <Button asChild>
+                    <Link href={`/courses/${params.courseId}/quiz/${params.quizId}/leaderboard`}>
+                        <Trophy className="mr-2 h-4 w-4" />
+                        View Leaderboard
+                    </Link>
+                </Button>
             </div>
         </CardContent>
     </Card>
