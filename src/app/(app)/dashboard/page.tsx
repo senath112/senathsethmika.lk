@@ -112,9 +112,7 @@ function StudentIdCard() {
         htmlToImage.toPng(minimalIdCardRef.current!, { 
             cacheBust: true, 
             pixelRatio: 2,
-            fetchRequestInit: { 
-                mode: 'cors'
-            }
+            skipAutoScale: true,
         })
             .then((dataUrl) => {
             const link = document.createElement('a');
