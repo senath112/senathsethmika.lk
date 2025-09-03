@@ -162,7 +162,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="font-body antialiased flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6 lg:pt-24 md:pl-28">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6 lg:pt-24 md:pl-28">
         {children}
       </main>
 
