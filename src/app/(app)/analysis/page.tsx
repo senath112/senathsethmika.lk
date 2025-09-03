@@ -31,6 +31,23 @@ const ChartSkeleton = () => (
     </Card>
 );
 
+const ColoredDot = (props: any) => {
+    const { cx, cy, value } = props;
+    let color = "#8884d8"; // Default color
+    if (value >= 80) {
+        color = "#22c55e"; // green
+    } else if (value >= 60) {
+        color = "#facc15"; // yellow
+    } else if (value >= 30) {
+        color = "#f97316"; // orange
+    } else {
+        color = "#ef4444"; // red
+    }
+
+    return <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={1} />;
+};
+
+
 export default function AnalysisPage() {
     const { user } = useAuth();
     const [mainExamResults, setMainExamResults] = useState<QuizResult[]>([]);
@@ -75,7 +92,7 @@ export default function AnalysisPage() {
     const lowestScore = allResults.length > 0 ? Math.min(...allResults.map(item => item.percentage)) : 0;
     const quizzesCompleted = allResults.length;
 
-    const renderChart = (data: QuizResult[], title: string, description: string) => {
+    const renderChart = (data: QuizResult[], title: string, description: string, useColoredDots = false) => {
         if (data.length === 0) {
             return (
                 <Card>
@@ -116,7 +133,14 @@ export default function AnalysisPage() {
                                     }}
                                 />
                                 <Legend />
-                                <Line type="monotone" dataKey="percentage" stroke="hsl(var(--primary))" name="Your Score (%)" activeDot={{ r: 8 }} />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="percentage" 
+                                    stroke={useColoredDots ? "#888888" : "hsl(var(--primary))"}
+                                    name="Your Score (%)" 
+                                    activeDot={{ r: 8 }}
+                                    dot={useColoredDots ? <ColoredDot /> : undefined}
+                                />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -181,7 +205,7 @@ export default function AnalysisPage() {
                 ) : (
                     <>
                         {renderChart(mainExamResults, "Main Exam MCQ Performance", "Your scores from major exams.")}
-                        {renderChart(dailyDoseResults, "Daily Dose MCQ Performance", "Your scores from daily practice quizzes.")}
+                        {renderChart(dailyDoseResults, "Daily Dose MCQ Performance", "Your scores from daily practice quizzes.", true)}
                     </>
                 )}
             </div>
