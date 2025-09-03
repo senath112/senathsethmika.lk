@@ -12,8 +12,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { requestEnrollment } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ArrowRight, Loader2, IndianRupee } from "lucide-react";
-import { subDays } from "date-fns";
+import { ArrowRight, Loader2, IndianRupee, Timer } from "lucide-react";
+import { addDays, differenceInDays, formatDistanceToNowStrict } from "date-fns";
 
 interface Course {
   id: string;
@@ -26,6 +26,11 @@ interface Course {
 }
 
 type EnrollmentStatus = 'enrolled' | 'pending' | 'none';
+
+interface EnrollmentDetails {
+    status: EnrollmentStatus;
+    expiresInDays?: number;
+}
 
 function CourseSkeleton() {
     return (
@@ -49,7 +54,7 @@ function CourseSkeleton() {
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<Record<string, EnrollmentStatus>>({});
+  const [enrollmentStatus, setEnrollmentStatus] = useState<Record<string, EnrollmentDetails>>({});
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -59,16 +64,8 @@ export default function CoursesPage() {
     const q = query(collection(db, 'courses'));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const coursesData: Course[] = [];
-      const cutoffDate = subDays(new Date(), 45);
-
       querySnapshot.forEach((doc) => {
-        const course = { id: doc.id, ...(doc.data() as Omit<Course, 'id'>) };
-        if (course.createdAt && course.createdAt.toDate() > cutoffDate) {
-          coursesData.push(course);
-        } else if (!course.createdAt) {
-          // Fallback for courses without a creation date for backward compatibility
-          coursesData.push(course);
-        }
+        coursesData.push({ id: doc.id, ...(doc.data() as Omit<Course, 'id'>) });
       });
       setCourses(coursesData);
       setLoading(false);
@@ -82,13 +79,16 @@ export default function CoursesPage() {
 
       const q = query(collection(db, 'enrollmentRequests'), where('studentId', '==', user.uid));
       const querySnapshot = await getDocs(q);
-      const statuses: Record<string, EnrollmentStatus> = {};
+      const statuses: Record<string, EnrollmentDetails> = {};
       querySnapshot.forEach(doc => {
         const data = doc.data();
         if (data.status === 'approved') {
-             statuses[data.courseId] = 'enrolled';
+            const enrollmentDate = data.requestedAt.toDate();
+            const expirationDate = addDays(enrollmentDate, 45);
+            const daysRemaining = differenceInDays(expirationDate, new Date());
+             statuses[data.courseId] = { status: 'enrolled', expiresInDays: daysRemaining > 0 ? daysRemaining : 0 };
         } else if (data.status === 'pending') {
-             statuses[data.courseId] = 'pending';
+             statuses[data.courseId] = { status: 'pending' };
         }
       });
       setEnrollmentStatus(statuses);
@@ -105,7 +105,7 @@ export default function CoursesPage() {
     setEnrollingCourseId(courseId);
     try {
       await requestEnrollment(courseId, user.uid, user.displayName || 'Anonymous');
-      setEnrollmentStatus(prev => ({ ...prev, [courseId]: 'pending' }));
+      setEnrollmentStatus(prev => ({ ...prev, [courseId]: { status: 'pending' } }));
       toast({ title: 'Success', description: 'Enrollment request sent successfully!' });
     } catch (error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to send enrollment request.' });
@@ -123,7 +123,7 @@ export default function CoursesPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {loading && Array.from({length: 6}).map((_, i) => <CourseSkeleton key={i} />)}
         {!loading && courses.map((course) => {
-            const status = enrollmentStatus[course.id] || 'none';
+            const enrollment = enrollmentStatus[course.id] || { status: 'none' };
             const isEnrolling = enrollingCourseId === course.id;
             return (
               <Card key={course.id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
@@ -141,13 +141,24 @@ export default function CoursesPage() {
                   <CardDescription>{course.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                   <div className="flex items-center text-primary font-bold">
-                        <IndianRupee className="h-5 w-5 mr-1" />
-                        <span className="text-xl">{course.courseFee}</span>
-                   </div>
+                   {enrollment.status === 'enrolled' ? (
+                       <div className="flex items-center text-secondary-foreground font-medium">
+                           <Timer className="h-5 w-5 mr-2 text-primary" />
+                           {enrollment.expiresInDays !== undefined && enrollment.expiresInDays > 0 ? (
+                               <span>Expires in {enrollment.expiresInDays} days</span>
+                           ) : (
+                               <span className="text-destructive">Expired</span>
+                           )}
+                       </div>
+                   ) : (
+                       <div className="flex items-center text-primary font-bold">
+                            <IndianRupee className="h-5 w-5 mr-1" />
+                            <span className="text-xl">{course.courseFee}</span>
+                       </div>
+                   )}
                 </CardContent>
                 <CardFooter>
-                    {status === 'enrolled' ? (
+                    {enrollment.status === 'enrolled' ? (
                         <Button className="w-full" asChild>
                             <Link href={`/lectures/${course.id}`}>
                                 Open Course <ArrowRight className="ml-2 h-4 w-4" />
@@ -157,14 +168,14 @@ export default function CoursesPage() {
                         <Button 
                             className="w-full" 
                             onClick={() => handleEnroll(course.id)}
-                            disabled={status === 'pending' || isEnrolling}
+                            disabled={enrollment.status === 'pending' || isEnrolling}
                         >
                             {isEnrolling ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Sending...
                               </>
-                            ) : status === 'pending' ? (
+                            ) : enrollment.status === 'pending' ? (
                               'Request Sent'
                             ) : (
                               'Enroll Now'
