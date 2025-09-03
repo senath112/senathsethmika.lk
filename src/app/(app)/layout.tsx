@@ -113,13 +113,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-screen w-full">
 
       {/* Desktop Dock */}
-      <aside className="hidden md:flex justify-center py-8 fixed left-0 top-0 h-full">
+      <aside className="hidden md:flex justify-center py-8 fixed left-0 top-0 h-full w-24">
         <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2 h-min sticky top-24">
             <SidebarNav />
         </div>
       </aside>
       
-      <div className="flex-1 md:ml-24">
+      <div className="flex flex-col flex-1 md:ml-24">
         {/* Mobile & Desktop Header - Floating Pill */}
         <header className="fixed top-4 left-4 right-4 md:left-28 z-50 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
             <Sheet>
@@ -156,11 +156,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserNav />
         </header>
 
-        <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
+        <main className="font-body antialiased flex-1 flex flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
           {children}
         </main>
         
-        <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground border-t">
+        <footer className="bg-card/80 backdrop-blur-lg p-4 text-center text-card-foreground border-t">
             <p className="font-bold">Senath Sethmika</p>
             <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
             <div className="flex justify-center gap-4 mt-2 text-sm">
