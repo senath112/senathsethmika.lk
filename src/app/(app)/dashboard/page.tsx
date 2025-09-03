@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X, MapPin, Loader2, Phone } from "lucide-react";
+import { ArrowRight, BookOpen, Download, Edit, GraduationCap, Save, X, MapPin, Loader2, Phone, Sun, Moon, CloudSun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState, useRef } from "react";
@@ -352,12 +352,60 @@ function QuickAccessCard({ icon: Icon, title, description, href }: { icon: React
   );
 }
 
+function DashboardGreeting() {
+    const { user } = useAuth();
+    const [greeting, setGreeting] = useState('');
+    const [icon, setIcon] = useState<React.ElementType>(Sun);
+    const [studentName, setStudentName] = useState('');
+
+    useEffect(() => {
+        if (user) {
+            const fetchStudentName = async () => {
+                const docRef = doc(db, "students", user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setStudentName(docSnap.data().name || user.displayName || '');
+                } else {
+                    setStudentName(user.displayName || '');
+                }
+            };
+            fetchStudentName();
+        }
+
+        const hour = new Date().getHours();
+        if (hour < 12) {
+            setGreeting('Good morning');
+            setIcon(Sun);
+        } else if (hour < 17) {
+            setGreeting('Good afternoon');
+            setIcon(CloudSun);
+        } else {
+            setGreeting('Good evening');
+            setIcon(Moon);
+        }
+    }, [user]);
+
+    if (!greeting || !studentName) {
+        return <Skeleton className="h-8 w-1/2 mb-4" />;
+    }
+
+    return (
+        <div className="flex items-center gap-4 mb-8">
+            <div className="bg-primary/10 p-3 rounded-full">
+                <icon.type {...icon.props} className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+                <h1 className="text-2xl font-bold">{greeting}, {studentName.split(' ')[0]}!</h1>
+                <p className="text-muted-foreground">Welcome back to your dashboard.</p>
+            </div>
+        </div>
+    );
+}
+
 export default function DashboardPage() {
   return (
     <>
-      <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
-      </div>
+      <DashboardGreeting />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StudentIdCard />
         <QuickAccessCard
@@ -376,5 +424,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
