@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import * as htmlToImage from 'html-to-image';
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface Location {
     latitude: number;
@@ -294,9 +295,22 @@ function StudentIdCard() {
                     Update Phone
                 </Button>
             )}
-            <Button size="icon" variant="outline" onClick={handleDownloadClick}>
-              <Download />
-            </Button>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span tabIndex={0}>
+                           <Button size="icon" variant="outline" onClick={handleDownloadClick} disabled={!isProfileComplete}>
+                             <Download />
+                           </Button>
+                        </span>
+                    </TooltipTrigger>
+                    {!isProfileComplete && (
+                        <TooltipContent>
+                           <p>Please update your phone and location to download.</p>
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
             {isEditing ? (
               <>
                 <Button size="icon" onClick={handleSave}><Save /></Button>
@@ -364,3 +378,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
