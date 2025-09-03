@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Menu,
   Bell,
+  BarChart2,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, bgColor: 'bg-sky-500 hover:bg-sky-600', iconColor: 'text-sky-500' },
   { href: '/courses', label: 'Courses', icon: GraduationCap, bgColor: 'bg-emerald-500 hover:bg-emerald-600', iconColor: 'text-emerald-500' },
   { href: '/documents', label: 'Documents', icon: FileText, bgColor: 'bg-amber-500 hover:bg-amber-600', iconColor: 'text-amber-500' },
+  { href: '/analysis', label: 'Analysis', icon: BarChart2, bgColor: 'bg-indigo-500 hover:bg-indigo-600', iconColor: 'text-indigo-500' },
   { href: '/billing', label: 'Billing', icon: CreditCard, bgColor: 'bg-violet-500 hover:bg-violet-600', iconColor: 'text-violet-500' },
   { href: '/notices', label: 'Notices', icon: Bell, bgColor: 'bg-rose-500 hover:bg-rose-600', iconColor: 'text-rose-500' },
 ];

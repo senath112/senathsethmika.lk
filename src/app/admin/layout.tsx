@@ -18,6 +18,7 @@ import {
   FileQuestion,
   Megaphone,
   FileText,
+  BarChart2,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
