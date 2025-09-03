@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { requestEnrollment } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, IndianRupee } from "lucide-react";
 import { subDays } from "date-fns";
 
 interface Course {
@@ -22,6 +22,7 @@ interface Course {
   image: string;
   aiHint: string;
   createdAt: any;
+  courseFee: string;
 }
 
 type EnrollmentStatus = 'enrolled' | 'pending' | 'none';
@@ -35,7 +36,9 @@ function CourseSkeleton() {
                 <Skeleton className="h-4 w-full mt-2" />
                  <Skeleton className="h-4 w-1/2 mt-1" />
             </CardHeader>
-            <CardContent className="flex-grow" />
+            <CardContent className="flex-grow">
+                 <Skeleton className="h-6 w-1/4" />
+            </CardContent>
             <CardFooter>
                 <Skeleton className="h-10 w-full" />
             </CardFooter>
@@ -137,7 +140,12 @@ export default function CoursesPage() {
                   <CardTitle>{course.title}</CardTitle>
                   <CardDescription>{course.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow" />
+                <CardContent className="flex-grow">
+                   <div className="flex items-center text-primary font-bold">
+                        <IndianRupee className="h-5 w-5 mr-1" />
+                        <span className="text-xl">{course.courseFee}</span>
+                   </div>
+                </CardContent>
                 <CardFooter>
                     {status === 'enrolled' ? (
                         <Button className="w-full" asChild>
