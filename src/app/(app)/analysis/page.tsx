@@ -52,6 +52,37 @@ const ColoredDot = (props: any) => {
     return <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={1} />;
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const value = data.percentage;
+        const category = data.category;
+
+        let color = "hsl(var(--background))";
+        let borderColor = "hsl(var(--border))";
+
+        if (category === 'Daily Dose MCQ') {
+            if (value >= 80) { color = "rgba(34, 197, 94, 0.1)"; borderColor="rgba(34, 197, 94, 0.5)"; }
+            else if (value >= 60) { color = "rgba(250, 204, 21, 0.1)"; borderColor="rgba(250, 204, 21, 0.5)"; }
+            else if (value >= 30) { color = "rgba(249, 115, 22, 0.1)"; borderColor="rgba(249, 115, 22, 0.5)"; }
+            else { color = "rgba(239, 68, 68, 0.1)"; borderColor="rgba(239, 68, 68, 0.5)"; }
+        } else { // Main Exam MCQ
+            if (value >= 75) { color = "rgba(34, 197, 94, 0.1)"; borderColor="rgba(34, 197, 94, 0.5)"; }
+            else if (value >= 55) { color = "rgba(250, 204, 21, 0.1)"; borderColor="rgba(250, 204, 21, 0.5)"; }
+            else if (value >= 25) { color = "rgba(249, 115, 22, 0.1)"; borderColor="rgba(249, 115, 22, 0.5)"; }
+            else { color = "rgba(239, 68, 68, 0.1)"; borderColor="rgba(239, 68, 68, 0.5)"; }
+        }
+
+        return (
+            <div className="p-2 rounded-md border text-sm" style={{ backgroundColor: color, borderColor: borderColor, backdropFilter: 'blur(4px)' }}>
+                <p className="font-bold">{`${data.quizTitle}`}</p>
+                <p>{`Score: ${value.toFixed(1)}%`}</p>
+            </div>
+        );
+    }
+    return null;
+};
+
 
 export default function AnalysisPage() {
     const { user } = useAuth();
@@ -131,11 +162,8 @@ export default function AnalysisPage() {
                                 <XAxis dataKey="quizTitle" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} interval={0} angle={-30} textAnchor="end" height={80} />
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} domain={[0, 100]} />
                                 <Tooltip
-                                    contentStyle={{
-                                        background: "hsl(var(--background))",
-                                        border: "1px solid hsl(var(--border))",
-                                        borderRadius: "var(--radius)"
-                                    }}
+                                    cursor={{ strokeDasharray: '3 3' }}
+                                    content={<CustomTooltip />}
                                 />
                                 <Legend />
                                 <Line 
