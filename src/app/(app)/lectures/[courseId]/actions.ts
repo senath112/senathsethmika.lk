@@ -2,7 +2,8 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { z } from 'zod';
 
 const VIDEO_VIEW_LIMIT = 3;
 
@@ -41,4 +42,27 @@ export async function getVideoViewCount(userId: string, courseId: string, videoI
     }
 
     return 0;
+}
+
+const AskQuestionSchema = z.object({
+    question: z.string().min(10, "Your question must be at least 10 characters long."),
+    courseId: z.string(),
+    studentId: z.string(),
+    studentName: z.string(),
+});
+
+export async function askQuestion(data: z.infer<typeof AskQuestionSchema>) {
+    const validatedData = AskQuestionSchema.parse(data);
+
+    try {
+        await addDoc(collection(db, 'questions'), {
+            ...validatedData,
+            createdAt: serverTimestamp(),
+            answered: false,
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Error asking question:", error);
+        return { success: false, error: "Failed to submit your question." };
+    }
 }

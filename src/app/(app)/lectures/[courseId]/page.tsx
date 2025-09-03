@@ -9,14 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
-import { checkAndIncrementViewCount, getVideoViewCount } from './actions';
+import { checkAndIncrementViewCount, getVideoViewCount, askQuestion } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion } from 'lucide-react';
+import { Ban, PlayCircle, Youtube, BookCopy, FileText, Download, Loader2, FileQuestion, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 import { getWatermarkedPdf } from '../../documents/actions';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface CourseVideo {
   url: string;
@@ -68,6 +70,8 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
   const { user } = useAuth();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
 
   useEffect(() => {
       setIsClient(true);
@@ -180,6 +184,31 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
         setDownloadingDocId(null);
     }
   };
+  
+   const handleAskQuestion = async () => {
+        if (!user || !course) return;
+        if (question.trim().length < 10) {
+            toast({ variant: 'destructive', title: 'Question is too short', description: 'Please elaborate on your question.'});
+            return;
+        }
+
+        setIsSubmittingQuestion(true);
+        const result = await askQuestion({
+            question: question,
+            courseId: course.id,
+            studentId: user.uid,
+            studentName: user.displayName || 'Anonymous Student',
+        });
+        setIsSubmittingQuestion(false);
+
+        if (result.success) {
+            toast({ title: 'Question Submitted!', description: 'Your question has been sent to the teacher.'});
+            setQuestion('');
+        } else {
+            toast({ variant: 'destructive', title: 'Submission Failed', description: result.error });
+        }
+    };
+
 
   const getDocIcon = (type: string) => {
     switch (type) {
@@ -235,6 +264,32 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
                             </div>
                         )}
                     </AspectRatio>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <HelpCircle className="h-6 w-6 text-primary" />
+                        Ask a Question
+                    </CardTitle>
+                    <CardDescription>Have a doubt? Ask the teacher directly from here.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div>
+                        <Label htmlFor="question-textarea">Your Question</Label>
+                        <Textarea
+                            id="question-textarea"
+                            placeholder="Type your question about the lecture here..."
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            className="min-h-[100px]"
+                        />
+                     </div>
+                     <Button onClick={handleAskQuestion} disabled={isSubmittingQuestion || !question}>
+                        {isSubmittingQuestion && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit Question
+                     </Button>
                 </CardContent>
             </Card>
 
