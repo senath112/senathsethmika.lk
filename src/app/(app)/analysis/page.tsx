@@ -157,7 +157,7 @@ export default function AnalysisPage() {
                 <CardContent>
                     <div className="h-[350px] relative">
                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <p className="text-4xl lg:text-5xl font-bold text-muted-foreground/10" style={{ transform: 'rotate(-15deg)' }}>
+                            <p className="text-5xl lg:text-7xl font-bold text-muted-foreground/10" style={{ transform: 'rotate(-15deg)' }}>
                                 ජීවිතයට විද්‍යාව
                             </p>
                         </div>
