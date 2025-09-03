@@ -234,7 +234,7 @@ export default function AnalysisPage() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="mt-6 grid gap-6">
                 {loading ? (
                     <>
                         <ChartSkeleton />
