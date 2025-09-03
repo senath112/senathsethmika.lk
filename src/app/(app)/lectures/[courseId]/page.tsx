@@ -133,6 +133,10 @@ export default function CourseVideosPage({ params }: { params: { courseId: strin
       const videoId = getYouTubeVideoId(videoUrl);
       if (!user || !videoId) return;
 
+      if (videoId === selectedVideo) {
+        return;
+      }
+
       try {
         const canWatch = await checkAndIncrementViewCount(user.uid, params.courseId, videoId);
         if (canWatch) {
