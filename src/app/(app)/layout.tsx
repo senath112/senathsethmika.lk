@@ -156,20 +156,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <UserNav />
         </header>
 
-        <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
-          {children}
-        </main>
-        
-        <footer className="bg-card/80 backdrop-blur-lg p-4 text-center text-card-foreground border-t">
-            <p className="font-bold">Senath Sethmika</p>
-            <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
-            <div className="flex justify-center gap-4 mt-2 text-sm">
-                <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
-                <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
-            </div>
-        </footer>
+        <div className="flex flex-col flex-1">
+          <main className="font-body antialiased flex-1 flex flex-col gap-4 p-4 lg:gap-6 lg:p-6 pt-24">
+            {children}
+          </main>
+          
+          <footer className="bg-card/80 backdrop-blur-lg p-4 text-center text-card-foreground border-t">
+              <p className="font-bold">Senath Sethmika</p>
+              <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
+              <div className="flex justify-center gap-4 mt-2 text-sm">
+                  <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
+                  <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
+              </div>
+          </footer>
+        </div>
       </div>
     </div>
   );
 }
-
