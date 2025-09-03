@@ -58,7 +58,7 @@ function SidebarNav() {
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="right">
+             <TooltipContent side="left">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -156,13 +156,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Desktop Dock - Floating Pill */}
-      <aside className="hidden md:block fixed top-1/2 -translate-y-1/2 left-4 z-50">
+      <aside className="hidden md:block fixed top-1/2 -translate-y-1/2 right-4 z-50">
         <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2">
             <SidebarNav />
         </div>
       </aside>
 
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6 lg:pt-24 md:pl-28">
+      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6 lg:pt-24 md:pr-28">
         {children}
       </main>
 
