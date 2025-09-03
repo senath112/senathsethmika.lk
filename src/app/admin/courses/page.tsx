@@ -80,6 +80,7 @@ interface QuizQuestion {
 interface Quiz {
     id: string;
     title: string;
+    category: 'Main Exam MCQ' | 'Daily Dose MCQ';
     questions: QuizQuestion[];
 }
 
@@ -116,6 +117,7 @@ export default function AdminCoursesPage() {
   const [newCourseVideos, setNewCourseVideos] = useState<CourseVideo[]>([{ url: '', description: '', thumbnail: '' }]);
 
   const [quizTitle, setQuizTitle] = useState('');
+  const [quizCategory, setQuizCategory] = useState<'Main Exam MCQ' | 'Daily Dose MCQ'>('Daily Dose MCQ');
   const [questions, setQuestions] = useState<QuizQuestion[]>([{ question: '', options: ['', ''], correctAnswer: '' }]);
   
   const { toast } = useToast();
@@ -337,7 +339,7 @@ export default function AdminCoursesPage() {
   const handleAddQuiz = async () => {
       if (!editingCourse) return;
       
-      const quizData = { title: quizTitle, questions };
+      const quizData = { title: quizTitle, questions, category: quizCategory };
       const result = await addQuiz(editingCourse.id, quizData);
       
       if (result.errors) {
@@ -353,6 +355,7 @@ export default function AdminCoursesPage() {
               description: 'Quiz added successfully.'
           });
           setQuizTitle('');
+          setQuizCategory('Daily Dose MCQ');
           setQuestions([{ question: '', options: ['', ''], correctAnswer: '' }]);
       }
   };
@@ -723,6 +726,18 @@ export default function AdminCoursesPage() {
                                 <Label htmlFor="quiz-title">Quiz Title</Label>
                                 <Input id="quiz-title" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. Chapter 1 Review" />
                              </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="quiz-category">Quiz Category</Label>
+                                <Select value={quizCategory} onValueChange={(value: 'Main Exam MCQ' | 'Daily Dose MCQ') => setQuizCategory(value)}>
+                                    <SelectTrigger id="quiz-category">
+                                        <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Daily Dose MCQ">Daily Dose MCQ</SelectItem>
+                                        <SelectItem value="Main Exam MCQ">Main Exam MCQ</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                             </div>
                              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
                                 {questions.map((q, qIndex) => (
                                     <div key={qIndex} className="p-4 border rounded-md space-y-4">
@@ -761,7 +776,7 @@ export default function AdminCoursesPage() {
                                                 <FileQuestion className="h-5 w-5 text-muted-foreground" />
                                                 <p className="text-sm font-medium">{quiz.title}</p>
                                             </div>
-                                            <Badge variant="secondary">{quiz.questions.length} questions</Badge>
+                                            <Badge variant={quiz.category === 'Main Exam MCQ' ? 'default' : 'secondary'}>{quiz.category}</Badge>
                                         </div>
                                     ))
                                 ) : (

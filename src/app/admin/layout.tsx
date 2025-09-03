@@ -19,6 +19,7 @@ import {
   Megaphone,
   FileText,
   BarChart2,
+  FileUp,
 } from 'lucide-react';
 import { UserNav } from "@/components/user-nav";
 import { Logo } from "@/components/logo";
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
   { href: '/admin/documents', label: 'Documents', icon: FileText },
   { href: '/admin/enrollments', label: 'Enrollments', icon: ClipboardCheck },
+  { href: '/admin/main-exam-results', label: 'Main Exam Results', icon: FileUp },
   { href: '/admin/notices', label: 'Notices', icon: Megaphone },
   { href: '/admin/scanner', label: 'Scanner', icon: QrCode },
   { href: '/admin/ai', label: 'AI', icon: Cpu },

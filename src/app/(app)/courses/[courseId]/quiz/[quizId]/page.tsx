@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,7 @@ interface QuizQuestion {
 interface Quiz {
   id: string;
   title: string;
+  category: 'Main Exam MCQ' | 'Daily Dose MCQ';
   questions: QuizQuestion[];
 }
 
@@ -58,8 +59,8 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
     }
   };
 
-  const handleSubmit = () => {
-    if (!quiz) return;
+  const handleSubmit = async () => {
+    if (!quiz || !user) return;
     let finalScore = 0;
     quiz.questions.forEach((q, index) => {
       if (selectedAnswers[index] === q.correctAnswer) {
@@ -68,6 +69,24 @@ export default function QuizPage({ params }: { params: { courseId: string; quizI
     });
     setScore(finalScore);
     setIsSubmitted(true);
+    
+    // Save the result to Firestore
+    try {
+      await addDoc(collection(db, 'quizResults'), {
+        studentId: user.uid,
+        quizId: quiz.id,
+        courseId: params.courseId,
+        quizTitle: quiz.title,
+        category: quiz.category || 'Uncategorized',
+        score: finalScore,
+        totalQuestions: quiz.questions.length,
+        percentage: (finalScore / quiz.questions.length) * 100,
+        submittedAt: serverTimestamp()
+      });
+    } catch (error) {
+        console.error("Failed to save quiz result: ", error);
+        // Optionally show a toast to the user
+    }
   };
   
   if (loading) {

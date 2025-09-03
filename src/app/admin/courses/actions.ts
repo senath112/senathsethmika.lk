@@ -38,6 +38,7 @@ const quizQuestionSchema = z.object({
 
 const quizSchema = z.object({
     title: z.string().min(3, 'Quiz title must be at least 3 characters.'),
+    category: z.enum(['Main Exam MCQ', 'Daily Dose MCQ']),
     questions: z.array(quizQuestionSchema).min(1, 'A quiz must have at least one question.')
 });
 
