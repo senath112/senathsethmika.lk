@@ -58,7 +58,7 @@ function SidebarNav() {
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="left">
+             <TooltipContent side="right">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -113,7 +113,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-screen w-full">
 
       {/* Desktop Dock */}
-      <aside className="hidden md:flex justify-center py-8 fixed left-0 top-0 h-full w-24">
+      <aside className="hidden md:flex justify-center py-8 fixed left-0 top-0 h-full w-24 z-50">
         <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2 h-min sticky top-24">
             <SidebarNav />
         </div>
