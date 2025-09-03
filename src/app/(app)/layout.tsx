@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
-  CreditCard,
   FileText,
   GraduationCap,
   LayoutDashboard,
@@ -163,7 +162,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="font-body antialiased flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-24 pt-24">
+      <main className="font-body antialiased flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto md:pl-28 pt-24">
         {children}
       </main>
 
