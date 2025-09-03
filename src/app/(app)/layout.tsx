@@ -31,7 +31,6 @@ const NAV_ITEMS = [
   { href: '/store', label: 'Store', icon: Store, bgColor: 'bg-blue-500 hover:bg-blue-600', iconColor: 'text-blue-500' },
   { href: '/documents', label: 'Documents', icon: FileText, bgColor: 'bg-amber-500 hover:bg-amber-600', iconColor: 'text-amber-500' },
   { href: '/analysis', label: 'Analysis', icon: BarChart2, bgColor: 'bg-indigo-500 hover:bg-indigo-600', iconColor: 'text-indigo-500' },
-  { href: '/billing', label: 'Billing', icon: CreditCard, bgColor: 'bg-violet-500 hover:bg-violet-600', iconColor: 'text-violet-500' },
   { href: '/science-bot', label: 'Science Bot', icon: Bot, bgColor: 'bg-gray-500 hover:bg-gray-600', iconColor: 'text-gray-500' },
   { href: '/notices', label: 'Notices', icon: Bell, bgColor: 'bg-rose-500 hover:bg-rose-600', iconColor: 'text-rose-500' },
 ];
