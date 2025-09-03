@@ -58,7 +58,7 @@ function SidebarNav() {
                 </Link>
               </Button>
             </TooltipTrigger>
-             <TooltipContent side="left">
+             <TooltipContent side="right">
               {item.label}
             </TooltipContent>
           </Tooltip>
@@ -148,21 +148,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <UserNav />
         </header>
         
-       {/* Desktop Header - Floating Pill */}
-       <header className="hidden md:flex fixed top-4 left-1/2 -translate-x-1/2 z-50 h-16 items-center gap-8 rounded-full border bg-card/80 backdrop-blur-lg px-8 shadow-lg">
-        <Logo />
-        <div className="h-6 w-px bg-border" />
-        <UserNav />
-      </header>
-
-      {/* Desktop Dock - Floating Pill */}
-      <aside className="hidden md:block fixed top-1/2 -translate-y-1/2 right-4 z-50">
-        <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2">
-            <SidebarNav />
+       <div className="hidden md:grid md:grid-cols-[80px_1fr] flex-1">
+         {/* Desktop Dock */}
+        <aside className="flex justify-center py-8">
+          <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2 h-min sticky top-24">
+              <SidebarNav />
+          </div>
+        </aside>
+        
+        <div className="flex flex-col">
+            {/* Desktop Header */}
+            <header className="flex h-16 items-center gap-8 px-8 sticky top-0 z-40">
+                <div className="ml-auto">
+                    <UserNav />
+                </div>
+            </header>
+            
+            <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                {children}
+            </main>
         </div>
-      </aside>
-
-      <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6 lg:pt-24 md:pr-28">
+      </div>
+      
+      {/* Mobile main content */}
+      <main className="md:hidden font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
         {children}
       </main>
 
