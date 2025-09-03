@@ -155,9 +155,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <UserNav />
         </header>
-
-        <div className="flex flex-col flex-1">
-          <main className="font-body antialiased flex-1 flex flex-col gap-4 p-4 lg:gap-6 lg:p-6 pt-24">
+        
+        <div className="flex flex-col flex-1 mt-20">
+          <main className="font-body antialiased flex-1 flex flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             {children}
           </main>
           
