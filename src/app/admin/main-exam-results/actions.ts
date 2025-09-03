@@ -18,19 +18,23 @@ const formSchema = z.object({
 
 
 export async function uploadMainExamMarks(values: z.infer<typeof formSchema>) {
-    const validatedData = formSchema.parse(values);
+    const validatedData = formSchema.safeParse(values);
+
+    if (!validatedData.success) {
+        return { success: false, error: 'Invalid data provided.' };
+    }
 
     try {
         const batch = writeBatch(db);
         const resultsCollection = collection(db, 'quizResults');
 
-        validatedData.entries.forEach(entry => {
+        validatedData.data.entries.forEach(entry => {
             const docRef = doc(resultsCollection); // Creates a new doc reference
             batch.set(docRef, {
                 studentId: entry.studentId,
-                quizTitle: validatedData.examTitle,
-                courseId: validatedData.courseId,
-                category: 'Main Exam',
+                quizTitle: validatedData.data.examTitle,
+                courseId: validatedData.data.courseId,
+                category: 'Main Exam MCQ', // The original form used Main Exam MCQ. Keeping it consistent.
                 score: entry.marks,
                 totalQuestions: 100,
                 percentage: entry.marks,
@@ -42,7 +46,6 @@ export async function uploadMainExamMarks(values: z.infer<typeof formSchema>) {
         return { success: true, message: 'Marks uploaded successfully.' };
     } catch (error) {
         console.error('Error uploading main exam marks:', error);
-        return { success: false, error: 'Failed to upload marks.' };
+        return { success: false, error: 'Failed to upload marks to the database.' };
     }
 }
-

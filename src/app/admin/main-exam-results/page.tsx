@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { collection, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { uploadMainExamMarks } from './actions';
 
 const marksEntrySchema = z.object({
   studentId: z.string().min(1, 'Student is required.'),
@@ -76,30 +77,19 @@ export default function MainExamResultsPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const batch = writeBatch(db);
-      
-      values.entries.forEach(entry => {
-        const resultRef = collection(db, 'quizResults');
-        batch.set(doc(resultRef), {
-          studentId: entry.studentId,
-          quizTitle: values.examTitle,
-          courseId: values.courseId,
-          category: 'Main Exam MCQ',
-          score: entry.marks,
-          totalQuestions: 100,
-          percentage: entry.marks,
-          submittedAt: new Date(),
+      const result = await uploadMainExamMarks(values);
+      if (result.success) {
+        toast({
+            title: 'Success',
+            description: 'Main exam marks have been uploaded successfully.',
         });
-      });
-      
-      await batch.commit();
-      
-      toast({
-        title: 'Success',
-        description: 'Main exam marks have been uploaded successfully.',
-      });
-      form.reset();
-
+        form.reset();
+        // Manually reset field array
+        remove();
+        append({ studentId: '', marks: 0 });
+      } else {
+        throw new Error(result.error || 'An unknown error occurred.');
+      }
     } catch (error) {
       console.error(error);
       toast({
