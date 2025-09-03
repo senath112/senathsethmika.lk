@@ -110,79 +110,65 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <div className="relative flex min-h-screen w-full">
 
-      {/* Mobile Header - Floating Pill */}
-       <header className="md:hidden fixed top-4 left-4 right-4 z-50 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
-              <div className="flex items-center gap-2 text-lg font-semibold mb-4 border-b pb-4">
-                  <Logo />
-              </div>
-              <nav className="flex flex-col gap-2">
-                {NAV_ITEMS.map((item) => (
-                    <Button
-                        key={item.href}
-                        variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                        className="w-full justify-start"
-                        asChild
-                    >
-                        <Link href={item.href}>
-                        <item.icon className={cn("mr-2 h-5 w-5", item.iconColor)} />
-                        <span>{item.label}</span>
-                        </Link>
-                    </Button>
-                ))}
-            </nav>
-            </SheetContent>
-          </Sheet>
-          <div className="flex-1 text-center">
-            <Logo className="inline-flex" />
-          </div>
-          <UserNav />
-        </header>
-        
-       <div className="hidden md:grid md:grid-cols-[80px_1fr] flex-1">
-         {/* Desktop Dock */}
-        <aside className="flex justify-center py-8">
-          <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2 h-min sticky top-24">
-              <SidebarNav />
-          </div>
-        </aside>
-        
-        <div className="flex flex-col">
-            {/* Desktop Header */}
-            <header className="hidden md:flex h-16 items-center gap-8 px-8 sticky top-0 z-40">
-                <div className="ml-auto">
-                    <UserNav />
-                </div>
-            </header>
-            
-            <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-                {children}
-            </main>
+      {/* Desktop Dock */}
+      <aside className="hidden md:flex justify-center py-8 fixed left-0 top-0 h-full">
+        <div className="bg-card/80 backdrop-blur-lg border rounded-full p-2 shadow-lg space-y-2 h-min sticky top-24">
+            <SidebarNav />
         </div>
-      </div>
+      </aside>
       
-      {/* Mobile main content */}
-      <main className="md:hidden font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
-        {children}
-      </main>
+      <div className="flex-1 md:ml-24">
+        {/* Mobile & Desktop Header - Floating Pill */}
+        <header className="fixed top-4 left-4 right-4 md:left-28 z-50 flex h-14 items-center justify-between gap-4 rounded-full border bg-card/80 backdrop-blur-lg px-4 shadow-lg">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="flex flex-col bg-card/80 backdrop-blur-lg">
+                <div className="flex items-center gap-2 text-lg font-semibold mb-4 border-b pb-4">
+                    <Logo />
+                </div>
+                <nav className="flex flex-col gap-2">
+                  {NAV_ITEMS.map((item) => (
+                      <Button
+                          key={item.href}
+                          variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+                          className="w-full justify-start"
+                          asChild
+                      >
+                          <Link href={item.href}>
+                          <item.icon className={cn("mr-2 h-5 w-5", item.iconColor)} />
+                          <span>{item.label}</span>
+                          </Link>
+                      </Button>
+                  ))}
+              </nav>
+              </SheetContent>
+            </Sheet>
+            <div className="flex-1 text-center hidden md:flex">
+              <Logo className="inline-flex" />
+            </div>
+            <UserNav />
+        </header>
 
-      <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground border-t">
-        <p className="font-bold">Senath Sethmika</p>
-        <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
-         <div className="flex justify-center gap-4 mt-2 text-sm">
-            <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
-            <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
-        </div>
-      </footer>
+        <main className="font-body antialiased flex flex-1 flex-col gap-4 p-4 pt-24 lg:gap-6 lg:p-6">
+          {children}
+        </main>
+        
+        <footer className="bg-card/80 backdrop-blur-lg mt-auto p-4 text-center text-card-foreground border-t">
+            <p className="font-bold">Senath Sethmika</p>
+            <p className="font-medium text-primary text-sm">විද්‍යාවේ හදගැස්ම</p>
+            <div className="flex justify-center gap-4 mt-2 text-sm">
+                <a href="tel:0760250623" className="hover:underline">076 025 0623</a>
+                <a href="tel:0720250621" className="hover:underline">072 025 0621</a>
+            </div>
+        </footer>
+      </div>
     </div>
   );
 }
