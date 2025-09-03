@@ -155,7 +155,12 @@ export default function AnalysisPage() {
                     <CardDescription>{description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[350px]">
+                    <div className="h-[350px] relative">
+                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <p className="text-4xl lg:text-5xl font-bold text-muted-foreground/10" style={{ transform: 'rotate(-15deg)' }}>
+                                ජීවිතයට විද්‍යාව
+                            </p>
+                        </div>
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={data}>
                                 <CartesianGrid strokeDasharray="3 3" />
